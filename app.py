@@ -1,7 +1,7 @@
 """
-app.py - ResearchAI Web Dashboard with Multilingual Research & Pedagogical Tutor Experience.
+app.py - ResearchAI Web Dashboard with Multilingual Research, Pedagogical Tutoring & Domain Prioritization.
 Supports English, Hindi, Telugu, and Arabic with RTL layouts, "Explain Simply" vs "Deep Research" modes,
-dynamic language switching without re-searching, interactive source cards, and citation inspectors.
+dynamic language switching without re-searching, compact source cards, transparent diversity metrics, and multi-format exports.
 """
 
 import os
@@ -13,8 +13,12 @@ from agent import ResearchAgent, ResearchSessionResult
 from config import AppConfig, config as default_config
 from report_generator import SUPPORTED_LANGUAGES
 from utils.helpers import (
+    build_html_printable_export,
     build_json_export,
     build_markdown_report_export,
+    build_text_report_export,
+    calculate_source_diversity,
+    classify_source_type,
     clean_text,
     extract_domain,
     truncate_text,
@@ -31,7 +35,7 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# CUSTOM CSS: MINIMALIST, GOOGLE-QUALITY ENTERPRISE & RTL SUPPORT
+# CUSTOM CSS: MINIMALIST, HIGH-CONTRAST ENTERPRISE & RTL SUPPORT
 # -----------------------------------------------------------------------------
 CUSTOM_CSS = """
 <style>
@@ -59,7 +63,8 @@ html, body, [class*="css"] {
 .rtl-container .source-meta,
 .rtl-container code,
 .rtl-container pre,
-.rtl-container a.source-title {
+.rtl-container a.source-title,
+.rtl-container .source-badge {
     direction: ltr;
     text-align: left;
     display: inline-block;
@@ -74,19 +79,17 @@ html, body, [class*="css"] {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: var(--text-color, #0f172a);
 }
 
 .brand-subtitle {
     font-size: 1.05rem;
-    color: var(--text-color, #475569);
     opacity: 0.85;
     font-weight: 400;
     margin-bottom: 1.5rem;
     line-height: 1.5;
 }
 
-/* Card Containers */
+/* Card Containers - Theme Adaptive */
 .research-card {
     background: rgba(128, 128, 128, 0.07);
     border: 1px solid rgba(128, 128, 128, 0.22);
@@ -159,13 +162,13 @@ html, body, [class*="css"] {
     100% { opacity: 1; }
 }
 
-/* Source Card */
+/* Redesigned Compact Source Card */
 .source-card {
     background: rgba(128, 128, 128, 0.07);
     border: 1px solid rgba(128, 128, 128, 0.22);
     border-radius: 8px;
-    padding: 1.1rem 1.25rem;
-    margin-bottom: 0.85rem;
+    padding: 0.95rem 1.15rem;
+    margin-bottom: 0.75rem;
     transition: all 0.15s ease;
     color: inherit;
 }
@@ -173,8 +176,16 @@ html, body, [class*="css"] {
     border-color: #3b82f6;
     background: rgba(59, 130, 246, 0.05);
 }
+.source-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
 .source-title {
-    font-size: 1.02rem;
+    font-size: 0.98rem;
     font-weight: 600;
     color: #3b82f6 !important;
     text-decoration: none;
@@ -182,27 +193,64 @@ html, body, [class*="css"] {
 .source-title:hover {
     text-decoration: underline;
 }
-.source-meta {
-    font-size: 0.82rem;
+.source-badge {
+    display: inline-block;
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    border-radius: 4px;
+    padding: 0.15rem 0.45rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.source-meta-row {
+    font-size: 0.8rem;
     opacity: 0.85;
-    margin-top: 0.25rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     font-family: 'JetBrains Mono', monospace;
-    color: inherit;
 }
 .source-rationale {
-    font-size: 0.89rem;
+    font-size: 0.875rem;
     color: inherit;
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(59, 130, 246, 0.09);
     border-left: 3px solid #3b82f6;
-    padding: 0.45rem 0.75rem;
-    margin-top: 0.45rem;
-    border-radius: 0 6px 6px 0;
+    padding: 0.35rem 0.65rem;
+    margin-top: 0.35rem;
+    border-radius: 0 4px 4px 0;
 }
 .rtl-container .source-rationale {
     border-left: none;
     border-right: 3px solid #3b82f6;
-    border-radius: 6px 0 0 6px;
+    border-radius: 4px 0 0 4px;
+}
+.source-evidence-preview {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin-top: 0.35rem;
+    line-height: 1.4;
+}
+
+/* Evidence Inspection Box */
+.evidence-section {
+    background: rgba(128, 128, 128, 0.05);
+    border-radius: 6px;
+    padding: 0.85rem;
+    margin-top: 0.5rem;
+}
+.evidence-direct {
+    background: rgba(34, 197, 94, 0.08);
+    border-left: 3px solid #22c55e;
+    padding: 0.45rem 0.75rem;
+    font-style: italic;
+    margin: 0.4rem 0;
+    border-radius: 0 4px 4px 0;
+}
+.evidence-synthesis {
+    background: rgba(59, 130, 246, 0.08);
+    border-left: 3px solid #3b82f6;
+    padding: 0.45rem 0.75rem;
+    margin: 0.4rem 0;
+    border-radius: 0 4px 4px 0;
 }
 
 /* Action Buttons */
@@ -220,18 +268,6 @@ div.stButton > button:first-child[kind="primary"] {
 div.stButton > button:first-child[kind="primary"]:hover {
     background-color: #1d4ed8;
     border-color: #1e40af;
-}
-
-/* Citation Highlighting */
-.citation-badge {
-    background-color: rgba(59, 130, 246, 0.15);
-    color: #3b82f6;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    border-radius: 4px;
-    padding: 0.1rem 0.35rem;
-    font-size: 0.775rem;
-    font-weight: 600;
-    font-family: 'JetBrains Mono', monospace;
 }
 </style>
 """
@@ -278,7 +314,7 @@ with st.sidebar:
             help="Get your key at https://aistudio.google.com/app/apikey. Key is held securely in runtime memory only.",
         )
         if not api_key_input:
-            st.info("Enter your Gemini API Key or set `GEMINI_API_KEY` in `.env` / Cloud Secrets.", icon="💡")
+            st.info("Enter your Gemini API Key or set `GEMINI_API_KEY` in Cloud Secrets.", icon="💡")
 
     st.divider()
     
@@ -303,7 +339,7 @@ with st.sidebar:
     st.divider()
 
     st.markdown("### 🌐 Multilingual Research & Tutor")
-    st.caption("• English\n• हिन्दी (Hindi)\n• తెలుగు (Telugu)\n• العربية (Arabic RTL)\n\n• Zero-Hallucination Citation Grounding\n• Intelligent 'Understand This Topic' Tutor")
+    st.caption("• English\n• हिन्दी (Hindi)\n• తెలుగు (Telugu)\n• العربية (Arabic RTL)\n\n• Domain-Aware Source Prioritization\n• Intelligent 'Understand This Topic' Tutor")
 
     if st.session_state.get("research_result"):
         st.divider()
@@ -324,7 +360,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown(
-    '<p style="font-size: 1.05rem; opacity: 0.85; margin-bottom: 1.5rem; line-height: 1.5;">Autonomous research engine & intelligent topic tutor. Investigates the web, cross-checks evidence, and teaches concepts in your preferred language with verified citations.</p>',
+    '<p style="font-size: 1.05rem; opacity: 0.85; margin-bottom: 1.5rem; line-height: 1.5;">Autonomous research engine & intelligent topic tutor. Investigates the web, cross-checks evidence across diverse domains, and teaches concepts in your preferred language with verified citations.</p>',
     unsafe_allow_html=True,
 )
 
@@ -379,7 +415,7 @@ col_input, col_btn = st.columns([5, 1.3])
 with col_input:
     user_query = st.text_input(
         "Enter your research question:",
-        placeholder="e.g., What are the latest breakthroughs in solid-state battery technology?",
+        placeholder="e.g., How is AI transforming modern healthcare?",
         label_visibility="collapsed",
         key="main_query_input",
     )
@@ -387,12 +423,13 @@ with col_input:
 with col_btn:
     start_clicked = st.button("Start Research 🚀", type="primary", use_container_width=True)
 
-# Example pills
+# Example pills across distinct domains
 example_questions = [
-    "What is Generative AI and how does it work?",
     "How is AI transforming modern healthcare?",
-    "Compare Python and R for data science in 2026.",
-    "What are autonomous AI agents and multi-agent systems?",
+    "What is machine learning and how does it work?",
+    "How does retrieval-augmented generation (RAG) work?",
+    "Explain climate change causes, impacts, and solutions.",
+    "What are the latest AI agent developments in 2026?",
 ]
 
 st.markdown("<p style='font-size: 0.85rem; opacity: 0.8; margin-top: 0.35rem; margin-bottom: 0.4rem;'>💡 <b>Example investigations:</b></p>", unsafe_allow_html=True)
@@ -424,10 +461,10 @@ if start_clicked:
         st.session_state["research_result"] = None
         st.session_state["current_question"] = target_question
         st.session_state["research_stages"] = {
-            "plan": {"status": "pending", "desc": "Deconstruct question & formulate search angles"},
-            "search": {"status": "pending", "desc": "Retrieve live web results across queries"},
-            "collect": {"status": "pending", "desc": "Extract body text and normalize source articles"},
-            "analyze": {"status": "pending", "desc": "Cross-check facts & detect contradictions"},
+            "plan": {"status": "pending", "desc": "Analyze domain & formulate targeted search strategy"},
+            "search": {"status": "pending", "desc": "Retrieve live web results across diverse sources"},
+            "collect": {"status": "pending", "desc": "Extract body text, dates, and direct evidence"},
+            "analyze": {"status": "pending", "desc": "Cross-check facts & detect genuine discrepancies"},
             "report": {"status": "pending", "desc": f"Synthesize report & tutor guide in {selected_lang_label}"},
         }
         st.session_state["activity_logs"] = []
@@ -436,10 +473,10 @@ if start_clicked:
         stepper_container = st.container()
         
         stages_ui = {
-            "plan": "1. Research Planning & Search Formulation",
+            "plan": "1. Domain-Aware Planning & Query Formulation",
             "search": "2. Multi-Angle Web Search Retrieval",
-            "collect": "3. Content Extraction & Normalization",
-            "analyze": "4. Cross-Source Fact & Contradiction Check",
+            "collect": "3. Content Extraction & Categorization",
+            "analyze": "4. Cross-Source Fact & Discrepancy Check",
             "report": f"5. Citation Synthesis & Tutor Guide ({SUPPORTED_LANGUAGES[chosen_lang]['native']})",
         }
 
@@ -511,6 +548,9 @@ if result:
         # Dynamic Language Switching Bar in Results
         col_res_hdr, col_switch_lang = st.columns([3, 1.5])
         
+        diversity_info = calculate_source_diversity(result.sources)
+        diversity_label = f"{diversity_info['distinct_type_count']} source types"
+
         with col_res_hdr:
             m = result.metrics
             current_lang = result.language
@@ -522,6 +562,7 @@ if result:
                 <div>
                     <span class="metric-pill">⏱️ <b>{m.get('duration_seconds', 0)}s</b></span>
                     <span class="metric-pill">🌐 Sources: <b>{m.get('sources_retrieved', 0)}</b></span>
+                    <span class="metric-pill">🏷️ Source Diversity: <b>{diversity_label}</b></span>
                     <span class="metric-pill">📌 Citations: <b>{m.get('citations_referenced', 0)}</b></span>
                     <span class="metric-pill">🗣️ Language: <b>{SUPPORTED_LANGUAGES.get(current_lang, {}).get('native', current_lang)}</b></span>
                     <span class="metric-pill">🎯 Mode: <b>{result.mode.title()}</b></span>
@@ -562,10 +603,10 @@ if result:
         tab_tutor, tab_report, tab_sources, tab_evidence, tab_plan, tab_export = st.tabs([
             "🎓 Understand This Topic",
             "📊 Deep Research Report",
-            f"🌐 Verified Sources ({len(result.sources)})",
+            f"🌐 Research Sources ({len(result.sources)})",
             "⚖️ Cross-Check & Discrepancies",
             "📐 Research Plan & Trace",
-            "💾 Export Dossier",
+            "📋 Export Dossier",
         ])
 
         # TAB 1: UNDERSTAND THIS TOPIC (TEACHING TUTOR)
@@ -573,7 +614,7 @@ if result:
             st.markdown(
                 f"<div class='tutor-card {rtl_class}'>"
                 f"<h2 style='font-size: 1.45rem; font-weight: 700; margin-top: 0;'>🎓 Understand This Topic: {result.question}</h2>"
-                f"<p style='opacity: 0.8; margin-bottom: 0;'>Intelligent topic guide explaining core mechanisms, terminology, and real-world impact in {SUPPORTED_LANGUAGES.get(result.language, {}).get('native', 'English')}.</p>"
+                f"<p style='opacity: 0.85; margin-bottom: 0;'>Intelligent topic guide explaining core mechanisms, terminology, and real-world impact in {SUPPORTED_LANGUAGES.get(result.language, {}).get('native', 'English')}.</p>"
                 f"</div>",
                 unsafe_allow_html=True,
             )
@@ -588,7 +629,7 @@ if result:
             st.markdown(
                 f"<div class='research-card {rtl_class}'>"
                 f"<h2 style='font-size: 1.45rem; font-weight: 700; margin-top: 0;'>📊 Intelligence Report: {result.question}</h2>"
-                f"<p style='opacity: 0.8; margin-bottom: 0;'>Evidence-backed research report with verified bracketed source citations ([1], [2]).</p>"
+                f"<p style='opacity: 0.85; margin-bottom: 0;'>Evidence-backed research report with verified bracketed source citations ([1], [2]).</p>"
                 f"</div>",
                 unsafe_allow_html=True,
             )
@@ -598,43 +639,65 @@ if result:
             else:
                 st.markdown(result.report_markdown)
 
-        # TAB 3: VERIFIED SOURCES
+        # TAB 3: RESEARCH SOURCES (Compact & Transparent)
         with tab_sources:
-            st.markdown("### 🌐 Verified Web References")
-            st.caption("All factual claims, numbers, and citations are grounded strictly in the following retrieved web documents.")
+            st.markdown("### 🌐 Research Sources & Categorization")
+            st.caption(f"Retrieved {len(result.sources)} documents across {diversity_info['distinct_type_count']} source categories. All claims and citations are mapped strictly to these references.")
+
+            # Summary of diversity tags
+            tag_badges = " ".join([f"<span class='metric-pill'><b>{k}</b> ({v})</span>" for k, v in diversity_info["type_counts"].items()])
+            st.markdown(f"<div style='margin-bottom: 0.75rem;'>{tag_badges}</div>", unsafe_allow_html=True)
 
             for src in result.sources:
                 src_id = src.get("id", 1)
                 title = src.get("title", "Untitled Source")
                 url = src.get("url", "#")
                 domain = src.get("domain", extract_domain(url))
+                stype = src.get("source_type") or classify_source_type(domain, url, title)
                 why = src.get("why_relevant", "Relevant source retrieved during investigation.")
-                extracted = src.get("extracted_facts", [])
+                evidence = src.get("extracted_evidence", src.get("snippet", "No excerpt available."))
+                claims = src.get("claims_supported", [])
+                direct_quotes = src.get("direct_evidence_quotes", [])
                 word_c = src.get("word_count", 0)
                 status = src.get("status", "success")
+                pub_date = src.get("publication_date")
+                retrieved_date = src.get("retrieved_date", time.strftime("%Y-%m-%d"))
                 
+                date_str = f"Published: {pub_date} | " if pub_date else ""
                 status_badge = "🟢 Full Body Verified" if status == "success" else "🟡 Excerpt Only"
 
                 st.markdown(
                     f"""
                     <div class="source-card">
-                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <div class="source-card-header">
                             <a href="{url}" target="_blank" class="source-title">[{src_id}] {title} ↗</a>
-                            <span style="font-size: 0.75rem; opacity: 0.75;">{status_badge} ({word_c} words)</span>
+                            <span class="source-badge">{stype}</span>
                         </div>
-                        <div class="source-meta">Domain: {domain} | Origin Query: "{src.get('query_origin', '')}"</div>
+                        <div class="source-meta-row">Domain: <code>{domain}</code> &bull; {date_str}Retrieved: {retrieved_date} &bull; {status_badge} ({word_c} words)</div>
                         <div class="source-rationale"><b>Why Relevant:</b> {why}</div>
+                        <div class="source-evidence-preview"><b>Evidence:</b> {truncate_text(evidence, 180)}</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
 
-                if extracted:
-                    with st.expander(f"Inspect Extracted Evidence for [{src_id}] {truncate_text(title, 50)}"):
-                        for fact in extracted:
-                            st.markdown(f"- {fact}")
-                        if src.get("snippet"):
-                            st.caption(f"**Search Snippet:** {src.get('snippet')}")
+                with st.expander(f"Inspect Evidence & Claims for [{src_id}] {truncate_text(title, 45)}"):
+                    st.markdown(f"**Exact Source URL:** [{url}]({url})")
+                    st.markdown(f"**Source Category:** `{stype}` | **Retrieved:** `{retrieved_date}`")
+                    
+                    st.markdown("#### 📖 DIRECT SOURCE CONTENT (Extracted Text):")
+                    if direct_quotes:
+                        for q in direct_quotes:
+                            st.info(f"\"{q}\"", icon="📄")
+                    else:
+                        st.info(f"\"{evidence}\"", icon="📄")
+
+                    st.markdown("#### 🎯 Supported Claims:")
+                    for c in claims:
+                        st.markdown(f"- ✅ {c}")
+
+                    if src.get("ai_synthesis_context"):
+                        st.markdown(f"**AI Integration Context:** {src.get('ai_synthesis_context')}")
 
         # TAB 4: EVIDENCE & CROSS-CHECK MATRIX
         with tab_evidence:
@@ -647,7 +710,7 @@ if result:
 
             col_con, col_div = st.columns(2)
             with col_con:
-                st.markdown("#### ✅ Multi-Source Consensus")
+                st.markdown("#### ✅ Multi-Source Consensus (Agreement)")
                 if consensus:
                     for c in consensus:
                         st.success(c, icon="✔️")
@@ -655,17 +718,17 @@ if result:
                     st.info("No explicit multi-source overlaps cataloged.")
 
             with col_div:
-                st.markdown("#### ⚠️ Divergences & Contradictions")
+                st.markdown("#### ⚠️ Genuine Discrepancies & Nuances")
                 if contradictions:
                     for d in contradictions:
                         st.warning(
-                            f"**{d.get('topic', 'Divergence')}**\n\n{d.get('discrepancy', '')}\n\n*Sources involved: {d.get('involved_sources', [])}*",
+                            f"**{d.get('topic', 'Discrepancy')}**\n\n{d.get('discrepancy', '')}\n\n*Sources involved: {d.get('involved_sources', [])}*",
                             icon="⚖️",
                         )
                 else:
                     st.success("No significant factual contradictions discovered among sources.", icon="🤝")
 
-            st.markdown("#### 🔭 Evidence Gaps & Analytical Blind Spots")
+            st.markdown("#### 🔭 Evidence Gaps & Limitations")
             if gaps:
                 for g in gaps:
                     st.markdown(f"- ⚠️ {g}")
@@ -674,18 +737,20 @@ if result:
 
         # TAB 5: PLAN & ACTIVITY TRACE
         with tab_plan:
-            st.markdown("### 📐 Autonomous Research Plan Breakdown")
+            st.markdown("### 📐 Autonomous Research Plan & Pipeline Trace")
             plan_data = result.plan or {}
             
             col_p1, col_p2 = st.columns(2)
             with col_p1:
-                st.markdown(f"**Research Intent:**\n> {plan_data.get('intent_summary', 'N/A')}")
+                st.markdown(f"**Research Topic:**\n> {result.question}")
+                st.markdown(f"**Detected Domain:**\n`🏷️ {plan_data.get('detected_domain', 'General Science')}`")
+                st.markdown(f"**Intent Summary:**\n> {plan_data.get('intent_summary', 'N/A')}")
                 st.markdown("**Target Analytical Dimensions:**")
                 for dim in plan_data.get("research_dimensions", []):
                     st.markdown(f"- {dim}")
             
             with col_p2:
-                st.markdown("**Generated Search Queries:**")
+                st.markdown("**Domain-Grounded Search Queries:**")
                 for q in plan_data.get("search_queries", []):
                     st.markdown(f"- `🔍 {q}`")
                 st.markdown("**Target Evidence Types:**")
@@ -702,8 +767,8 @@ if result:
 
         # TAB 6: EXPORTS
         with tab_export:
-            st.markdown("### 💾 Export Research Dossier")
-            st.caption("Download the compiled report and teaching guide as clean Markdown or structured JSON for data analysis pipelines.")
+            st.markdown("### 📋 Export Research Dossier")
+            st.caption("Export your complete research dossier in Markdown, Plain Text, Printable HTML (Save as PDF), or structured JSON.")
 
             combined_report_text = f"{result.teaching_markdown}\n\n---\n\n{result.report_markdown}"
 
@@ -711,6 +776,21 @@ if result:
                 question=result.question,
                 report_content=combined_report_text,
                 sources=result.sources,
+                language=result.language,
+            )
+
+            txt_content = build_text_report_export(
+                question=result.question,
+                report_content=combined_report_text,
+                sources=result.sources,
+                language=result.language,
+            )
+
+            html_content = build_html_printable_export(
+                question=result.question,
+                report_content_html=f"<div>{result.teaching_markdown}</div><hr><div>{result.report_markdown}</div>",
+                sources=result.sources,
+                language=result.language,
             )
 
             json_content = build_json_export(
@@ -720,6 +800,7 @@ if result:
                 sources=result.sources,
                 contradictions=result.analysis.get("contradictions_and_divergences", []) if result.analysis else [],
                 metrics=result.metrics,
+                language=result.language,
             )
 
             col_ex1, col_ex2 = st.columns(2)
@@ -731,9 +812,23 @@ if result:
                     mime="text/markdown",
                     use_container_width=True,
                 )
+                st.download_button(
+                    label="📄 Download Plain Text (.txt)",
+                    data=txt_content,
+                    file_name=f"ResearchAI_{result.language}_{int(time.time())}.txt",
+                    mime="text/plain",
+                    use_container_width=True,
+                )
             with col_ex2:
                 st.download_button(
-                    label="📥 Download Structured JSON (.json)",
+                    label="🖨️ Printable Report / Save as PDF (.html)",
+                    data=html_content,
+                    file_name=f"ResearchAI_{result.language}_{int(time.time())}.html",
+                    mime="text/html",
+                    use_container_width=True,
+                )
+                st.download_button(
+                    label="💾 Download Structured JSON (.json)",
                     data=json_content,
                     file_name=f"ResearchAI_{result.language}_{int(time.time())}.json",
                     mime="application/json",

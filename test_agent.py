@@ -1,19 +1,24 @@
 """
 test_agent.py - Comprehensive Unit and Component Tests for ResearchAI.
-Tests configuration validation, web search retrieval, content extraction,
-markdown/json exports, and error boundaries.
+Tests configuration validation, domain-aware planning, web search retrieval,
+source categorization, diversity metrics, content extraction, and multi-format exports.
 """
 
 import os
 import unittest
 from config import AppConfig
+from planner import ResearchPlanner
 from search import SearchClient
 from source_processor import SourceProcessor
 from utils.helpers import (
+    classify_source_type,
+    calculate_source_diversity,
     clean_text,
     extract_domain,
     truncate_text,
     build_markdown_report_export,
+    build_text_report_export,
+    build_html_printable_export,
     build_json_export,
 )
 
@@ -34,11 +39,29 @@ class TestConfig(unittest.TestCase):
             cfg.validate_api_key()
 
 
-class TestHelpers(unittest.TestCase):
+class TestHelpersAndClassification(unittest.TestCase):
     def test_extract_domain(self):
         self.assertEqual(extract_domain("https://www.nature.com/articles/s41586"), "nature.com")
         self.assertEqual(extract_domain("http://github.com/google/genai"), "github.com")
         self.assertEqual(extract_domain(""), "Unknown Source")
+
+    def test_classify_source_type(self):
+        self.assertEqual(classify_source_type("who.int"), "Government / Public Health Org")
+        self.assertEqual(classify_source_type("cdc.gov"), "Government / Public Health Org")
+        self.assertEqual(classify_source_type("nature.com"), "Scientific Journal / Peer-Reviewed")
+        self.assertEqual(classify_source_type("stanford.edu"), "Academic / University")
+        self.assertEqual(classify_source_type("docs.python.org"), "Official Tech Documentation")
+        self.assertEqual(classify_source_type("reuters.com"), "News & Analysis")
+
+    def test_calculate_source_diversity(self):
+        sources = [
+            {"domain": "who.int", "url": "https://who.int/news/1"},
+            {"domain": "nature.com", "url": "https://nature.com/articles/2"},
+            {"domain": "stanford.edu", "url": "https://stanford.edu/research/3"},
+        ]
+        div = calculate_source_diversity(sources)
+        self.assertEqual(div["distinct_type_count"], 3)
+        self.assertTrue(div["is_diverse"])
 
     def test_clean_text(self):
         raw = "Hello \x00 world \n\n\n\n test    spaces"
@@ -51,20 +74,36 @@ class TestHelpers(unittest.TestCase):
         self.assertTrue(truncated.endswith("..."))
         self.assertTrue(len(truncated) <= 28)
 
-    def test_markdown_and_json_export(self):
+    def test_multi_format_exports(self):
+        sources = [{"id": 1, "title": "RAG Paper", "url": "https://arxiv.org/abs/2005.11401", "domain": "arxiv.org"}]
         md = build_markdown_report_export(
             question="What is RAG?",
             report_content="## Summary\nRAG connects LLMs to external data [1].",
-            sources=[{"id": 1, "title": "RAG Paper", "url": "https://arxiv.org/abs/2005.11401"}],
+            sources=sources,
         )
-        self.assertIn("# ResearchAI Report: What is RAG?", md)
+        self.assertIn("# ResearchAI Intelligence Dossier: What is RAG?", md)
         self.assertIn("[1] [RAG Paper](https://arxiv.org/abs/2005.11401)", md)
+
+        txt = build_text_report_export(
+            question="What is RAG?",
+            report_content="RAG Summary",
+            sources=sources,
+        )
+        self.assertIn("RESEARCHAI DOSSIER: WHAT IS RAG?", txt)
+
+        html = build_html_printable_export(
+            question="What is RAG?",
+            report_content_html="<p>RAG Summary</p>",
+            sources=sources,
+        )
+        self.assertIn("ResearchAI Intelligence Dossier", html)
+        self.assertIn("arxiv.org", html)
 
         js = build_json_export(
             question="What is RAG?",
             plan={"queries": ["RAG definition"]},
             report="RAG content",
-            sources=[],
+            sources=sources,
             contradictions=[],
             metrics={"duration": 1.2},
         )
@@ -104,6 +143,15 @@ class TestSourceProcessor(unittest.TestCase):
         self.assertIn("diagnostic accuracy comparable to human experts", extracted)
         self.assertNotIn("Navigation Link", extracted)
         self.assertNotIn("Copyright 2026", extracted)
+
+
+class TestDomainAwarePlanner(unittest.TestCase):
+    def test_heuristic_domain_detection(self):
+        planner = ResearchPlanner(api_key="mock_key_for_testing_heuristics")
+        self.assertEqual(planner._detect_domain_heuristics("How is AI transforming modern healthcare?"), "Healthcare & Medicine")
+        self.assertEqual(planner._detect_domain_heuristics("Explain climate change and global emissions"), "Climate & Environment")
+        self.assertEqual(planner._detect_domain_heuristics("How does RAG work in machine learning?"), "Technology & Computer Science")
+        self.assertEqual(planner._detect_domain_heuristics("What causes inflation in global markets?"), "Finance & Economics")
 
 
 if __name__ == "__main__":

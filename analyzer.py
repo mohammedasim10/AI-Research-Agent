@@ -1,7 +1,7 @@
 """
 analyzer.py - Source Analysis, Fact Extraction & Cross-Checking Module for ResearchAI.
 Evaluates evidence across multiple collected web sources, identifies consensus facts,
-detects contradictions or conflicting claims, and highlights evidence limitations.
+detects genuine contradictions, and clearly separates direct source evidence from AI synthesis.
 """
 
 from dataclasses import dataclass, asdict
@@ -31,6 +31,7 @@ class SourceAnalysisResult:
 class ResearchAnalyzer:
     """
     Analyzes and cross-references multi-source web evidence using Gemini LLM.
+    Strictly separates direct source content from AI synthesis.
     """
 
     def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash"):
@@ -93,56 +94,62 @@ class ResearchAnalyzer:
         # Prepare compacted representation of source documents for LLM context
         sources_payload = []
         for s in sources:
-            # Use snippet or full text up to 2500 chars to balance speed and richness
-            content_sample = s.full_text[:2500] if s.full_text else s.snippet
+            content_sample = s.full_text[:3000] if s.full_text else s.snippet
             sources_payload.append(
                 f"[Source ID: {s.id}]\n"
                 f"Title: {s.title}\n"
                 f"URL: {s.url}\n"
                 f"Domain: {s.domain}\n"
+                f"Source Type: {s.source_type}\n"
+                f"Publication Date: {s.publication_date or 'Not explicitly listed'}\n"
                 f"Content:\n{content_sample}\n"
                 f"---"
             )
         joined_sources = "\n".join(sources_payload)
 
         system_instruction = (
-            "You are the Senior Research Verification & Analysis Agent for ResearchAI. "
-            "Your job is to objectively analyze evidence from multiple web sources, extract factual findings, "
-            "and rigorously cross-check them. Do not hallucinate or invent facts not present in the sources. "
-            "Identify what multiple sources agree on, explicit contradictions or differing perspectives between sources, "
-            "and any critical gaps or limitations in the available evidence. Output strictly valid JSON."
+            "You are the Senior Research Verification & Fact-Checking Agent for ResearchAI. "
+            "Analyze the provided web sources objectively and extract structured empirical evidence. "
+            "STRICT RULES:\n"
+            "1. NEVER fabricate facts or quotes not present in the sources.\n"
+            "2. For each source, identify the specific factual claims it supports.\n"
+            "3. Clearly identify what independent sources AGREE on (Consensus).\n"
+            "4. Identify genuine DISCREPANCIES or differing estimates/perspectives. Never force a disagreement where none exists.\n"
+            "5. Identify empirical LIMITATIONS or missing data points.\n"
+            "Output strictly valid JSON."
         )
 
-        prompt = f"""Investigate the following question based EXCLUSIVELY on the provided web sources:
-Research Question: "{question}"
+        prompt = f"""Analyze these web sources for the research question:
+RESEARCH QUESTION: "{question}"
 
-Collected Sources ({len(sources)} total):
+COLLECTED SOURCES ({len(sources)} total):
 {joined_sources}
 
-Perform thorough multi-source analysis and return JSON with this exact structure:
+Perform cross-source verification and return JSON matching this schema:
 {{
   "source_evaluations": [
     {{
       "id": 1,
-      "why_relevant": "1 sentence explaining why this source directly addresses the research question.",
-      "key_extracted_facts": [
-        "Concrete fact or data point extracted from this source",
-        "Another fact or claim supported by this source"
-      ]
+      "why_relevant": "Concise 1-sentence explanation of why this source is directly relevant to the question.",
+      "claims_supported": [
+        "Specific claim or finding this source supports (e.g. AI diagnostic accuracy matches specialists in mammography)"
+      ],
+      "direct_evidence_summary": "Clean summary of concrete facts, data, or empirical findings stated in this source.",
+      "ai_synthesis_context": "Brief analytical context on how this evidence integrates into the broader topic."
     }}
   ],
   "consensus_findings": [
-    "Fact or insight corroborated across multiple independent sources (e.g. Sources [1], [3] agree that...)"
+    "Confirmed fact or shared conclusion supported by multiple sources (e.g. Sources [1] and [3] agree on X)"
   ],
   "contradictions_and_divergences": [
     {{
-      "topic": "Specific topic or metric where sources differ",
-      "discrepancy": "Source [1] states X, whereas Source [2] argues Y",
+      "topic": "Topic or metric where sources differ",
+      "discrepancy": "Source [X] indicates A, while Source [Y] suggests B",
       "involved_sources": [1, 2]
     }}
   ],
   "evidence_gaps_and_limitations": [
-    "Specific blind spot, lack of quantitative data, or scope limitation observed in the retrieved evidence."
+    "Specific blind spot, lack of longitudinal data, or sample limitation observed in the retrieved evidence."
   ]
 }}
 """
@@ -153,7 +160,6 @@ Perform thorough multi-source analysis and return JSON with this exact structure
             cleaned_json = re.sub(r"\s*```$", "", cleaned_json.strip())
             data = json.loads(cleaned_json)
 
-            # Map extracted source facts back to our source objects
             eval_map = {item["id"]: item for item in data.get("source_evaluations", []) if "id" in item}
             
             enriched_sources: List[Dict[str, Any]] = []
@@ -161,9 +167,17 @@ Perform thorough multi-source analysis and return JSON with this exact structure
                 src_dict = s.to_dict()
                 eval_data = eval_map.get(s.id, {})
                 src_dict["why_relevant"] = eval_data.get(
-                    "why_relevant", f"Provides coverage and context for '{truncate_text(s.title, 60)}'."
+                    "why_relevant", f"Provides coverage on '{truncate_text(s.title, 60)}'."
                 )
-                src_dict["extracted_facts"] = eval_data.get("key_extracted_facts", [s.snippet])
+                src_dict["claims_supported"] = eval_data.get(
+                    "claims_supported", [f"Provides evidence for '{s.query_origin}'"]
+                )
+                src_dict["extracted_evidence"] = eval_data.get(
+                    "direct_evidence_summary", s.snippet or "Evidence extracted from article body."
+                )
+                src_dict["ai_synthesis_context"] = eval_data.get(
+                    "ai_synthesis_context", "Integrated into thematic report synthesis."
+                )
                 enriched_sources.append(src_dict)
 
             consensus = data.get("consensus_findings", [])
@@ -184,13 +198,15 @@ Perform thorough multi-source analysis and return JSON with this exact structure
             for s in sources:
                 src_dict = s.to_dict()
                 src_dict["why_relevant"] = f"Relevant web result retrieved for query '{s.query_origin}'"
-                src_dict["extracted_facts"] = [s.snippet] if s.snippet else ["Relevant context retrieved."]
+                src_dict["claims_supported"] = [f"Context regarding '{s.title}'"]
+                src_dict["extracted_evidence"] = s.snippet or "Relevant context retrieved."
+                src_dict["ai_synthesis_context"] = "Used as foundational source evidence."
                 fallback_sources.append(src_dict)
 
             return SourceAnalysisResult(
                 enriched_sources=fallback_sources,
                 consensus_findings=["Sources collectively address core dimensions of the research question."],
                 contradictions_and_divergences=[],
-                evidence_gaps_and_limitations=["Detailed cross-source contradiction scan completed with basic heuristics."],
+                evidence_gaps_and_limitations=["Cross-source contradiction scan completed with basic heuristics."],
                 synthesis_ready=True,
             )

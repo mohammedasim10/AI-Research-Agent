@@ -1,34 +1,40 @@
 """
 source_processor.py - Web Content Extractor and Source Normalizer for ResearchAI.
 Extracts clean, readable body text from retrieved web pages with strict timeouts,
-rate limits, and fallback extraction mechanisms.
+source type categorization, publication date extraction, and raw evidence preservation.
 """
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, asdict
+from datetime import datetime, timezone
 import logging
+import re
 from typing import Dict, List, Optional
 import httpx
 from bs4 import BeautifulSoup
-from utils.helpers import clean_text, extract_domain, truncate_text
+from utils.helpers import clean_text, extract_domain, classify_source_type, truncate_text
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class ProcessedSource:
-    """Represents an enriched, extracted web source."""
+    """Represents an enriched, categorized web source with extracted evidence."""
     id: int
     title: str
     url: str
     domain: str
+    source_type: str
     snippet: str
     full_text: str
     word_count: int
     status: str  # "success", "partial", "failed"
     query_origin: str
+    publication_date: Optional[str] = None
+    retrieved_date: str = ""
     why_relevant: Optional[str] = None
     extracted_facts: Optional[List[str]] = None
+    direct_evidence_quotes: Optional[List[str]] = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -46,11 +52,42 @@ class SourceProcessor:
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0.0.0 Safari/537.36 (ResearchAI Agent)"
+                "Chrome/124.0.0.0 Safari/537.36 (ResearchAI Academic Agent)"
             ),
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.9",
         }
+
+    def _extract_date_from_html(self, soup: BeautifulSoup, raw_html: str) -> Optional[str]:
+        """Extracts publication date from meta tags or time elements."""
+        try:
+            # 1. Meta property inspection
+            date_meta_names = [
+                "article:published_time",
+                "og:published_time",
+                "datePublished",
+                "date",
+                "DC.date.issued",
+                "pubdate",
+            ]
+            for name in date_meta_names:
+                meta = soup.find("meta", attrs={"property": name}) or soup.find("meta", attrs={"name": name})
+                if meta and meta.get("content"):
+                    val = meta["content"][:10]
+                    if re.match(r"^\d{4}-\d{2}-\d{2}", val):
+                        return val
+
+            # 2. Time element
+            time_tag = soup.find("time")
+            if time_tag:
+                dt = time_tag.get("datetime") or time_tag.get_text()
+                if dt:
+                    match = re.search(r"(\d{4}[-/.]\d{1,2}[-/.]\d{1,2})", dt)
+                    if match:
+                        return match.group(1).replace("/", "-").replace(".", "-")
+        except Exception:
+            pass
+        return None
 
     def _extract_with_trafilatura(self, html_content: str) -> Optional[str]:
         """Attempts high-precision text extraction via trafilatura."""
@@ -74,11 +111,10 @@ class SourceProcessor:
             for tag in soup(["script", "style", "nav", "footer", "header", "noscript", "svg", "aside"]):
                 tag.decompose()
             
-            # Extract paragraphs and headers
             paragraphs = []
             for elem in soup.find_all(["p", "h1", "h2", "h3", "h4", "li"]):
                 txt = clean_text(elem.get_text())
-                if len(txt) > 20:
+                if len(txt) > 25:
                     paragraphs.append(txt)
             return "\n\n".join(paragraphs)
         except Exception:
@@ -86,13 +122,15 @@ class SourceProcessor:
 
     def fetch_and_process_url(self, item: dict, source_id: int) -> ProcessedSource:
         """
-        Fetches a single URL and extracts clean markdown/text.
+        Fetches a single URL, classifies source type, extracts dates and body text.
         """
         url = item.get("url", "")
         title = item.get("title") or "Untitled Source"
         snippet = item.get("snippet") or ""
         query_origin = item.get("query") or ""
         domain = item.get("domain") or extract_domain(url)
+        source_type = classify_source_type(domain, url, title)
+        today_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
         if not url or not url.startswith("http"):
             return ProcessedSource(
@@ -100,14 +138,17 @@ class SourceProcessor:
                 title=title,
                 url=url,
                 domain=domain,
+                source_type=source_type,
                 snippet=snippet,
                 full_text=snippet,
                 word_count=len(snippet.split()),
                 status="partial",
                 query_origin=query_origin,
+                retrieved_date=today_date,
             )
 
         extracted_text = ""
+        pub_date = None
         status = "failed"
 
         try:
@@ -115,11 +156,14 @@ class SourceProcessor:
                 timeout=self.timeout,
                 headers=self.headers,
                 follow_redirects=True,
-                verify=False,  # Resilient to misconfigured SSL certificates on legacy research sites
+                verify=False,
             ) as client:
                 response = client.get(url)
                 if response.status_code == 200:
                     html = response.text
+                    soup = BeautifulSoup(html, "html.parser")
+                    pub_date = self._extract_date_from_html(soup, html)
+                    
                     # 1. Try Trafilatura
                     extracted_text = self._extract_with_trafilatura(html) or ""
                     # 2. Fallback to BeautifulSoup if Trafilatura gave very little
@@ -148,16 +192,29 @@ class SourceProcessor:
 
         word_count = len(sanitized_text.split())
 
+        # Extract direct evidence snippet quotes
+        direct_quotes = []
+        if snippet:
+            direct_quotes.append(snippet)
+        if sanitized_text and len(sanitized_text) > 100:
+            sample_para = [p for p in sanitized_text.split("\n\n") if len(p) > 60]
+            if sample_para:
+                direct_quotes.append(truncate_text(sample_para[0], 250))
+
         return ProcessedSource(
             id=source_id,
             title=title,
             url=url,
             domain=domain,
+            source_type=source_type,
             snippet=snippet,
             full_text=sanitized_text,
             word_count=word_count,
             status=status,
             query_origin=query_origin,
+            publication_date=pub_date,
+            retrieved_date=today_date,
+            direct_evidence_quotes=direct_quotes[:2],
         )
 
     def process_sources_concurrently(
