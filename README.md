@@ -48,6 +48,10 @@ flowchart TD
 ## ✨ Core Features
 
 - **Autonomous Agentic Loop**: Deconstructs questions into analytical sub-topics instead of executing naive one-shot prompts.
+- **Multilingual Research & Tutoring**: Native research and pedagogical explanations in **English**, **हिन्दी (Hindi)**, **తెలుగు (Telugu)**, and **العربية (Arabic)** with full RTL layout support.
+- **Pedagogical Topic Tutor ("Understand This Topic")**: Explains complex concepts intuitively (What it is, Why it matters, How it works step-by-step, Key Terminology breakdown, Real-world examples, Key takeaways).
+- **Dual Depth Modes**: Toggle between **"💡 Explain Simply"** (Beginner Mode) and **"🔬 Deep Research"** (Detailed Technical Mode).
+- **Instant Language Switching**: Adapt the research report and teaching guide to any supported language on the fly without re-searching the web, preserving citations (`[1]`, `[2]`) and evidence integrity.
 - **Live, Zero-Cost Web Retrieval**: Integrated multi-query search using DuckDuckGo (`ddgs`) with automated HTML fallback.
 - **Deep Content Extraction**: Concurrently fetches real web pages and parses clean main-body text using `trafilatura` and `beautifulsoup4`, filtering out ads, navigation headers, and boilerplate.
 - **Multi-Source Cross-Verification**: Compares evidence across sources, highlights consensus findings, and explicitly flags contradictions and divergent metrics rather than silently picking one.
@@ -55,7 +59,7 @@ flowchart TD
 - **Interactive Source Inspector**: Expandable source cards displaying domain, URL, extracted facts, word count, and relevance rationale.
 - **Real-Time Progress Stepper**: Live UI indicator reflecting backend execution milestones (Plan → Search → Collect → Analyze → Report).
 - **Multi-Format Exporting**: One-click download of the completed investigation as a publication-ready Markdown document or a structured JSON payload for data analytics pipelines.
-- **Google-Grade Enterprise UI**: Clean, light-mode minimalist dashboard built with custom CSS, high-contrast typography, and full mobile responsiveness.
+- **Google-Grade Enterprise UI**: Clean, theme-adaptive minimalist dashboard with full dark and light mode support and complete mobile responsiveness.
 
 ---
 
