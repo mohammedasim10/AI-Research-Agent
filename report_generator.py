@@ -214,30 +214,33 @@ OUTPUT FORMAT REQUIREMENTS:
 Write the complete output using Markdown headings (## and ###) in the target language:
 
 === PART A: UNDERSTAND THIS TOPIC ===
-## 🎓 Understand This Topic: Simple Explanation & Guide
+## 🎓 Understand This Topic: Simple Guide & Direct Answer
+
+### 🎯 Direct Answer
+A crisp, direct 3-6 sentence answer to the exact question. Plain, clear, and immediately understandable.
 
 ### 1. What is it? (Simple Explanation)
-A clear, intuitive explanation answering the question in plain, accessible language.
+A clear, intuitive 2-4 sentence explanation answering what this is in plain, conversational language (accessible to a 13-year-old).
 
-### 2. Why Does It Matter?
-Why this topic is important, its significance, and practical impact.
+### 2. How Does It Work? (Step-by-Step)
+Break down the core process into 3-4 simple, numbered steps.
 
-### 3. How Does It Work? (Step-by-Step)
-Break down the underlying process into 3-4 simple, numbered steps.
+### 3. Simple Everyday Example & Analogy
+Provide one relatable real-world comparison or everyday analogy (e.g. for RAG: finding pages in a library; for AI Agent: a helpful digital assistant with a checklist and tools).
 
-### 4. Key Concepts & Important Terms
-List 3-5 crucial terms. For each term, format as:
-- **Term (English Term)**: Simple definition -> *Everyday Example*
+### 4. Why Does It Matter?
+2-3 clear sentences explaining the real-world significance and practical impact.
 
-### 5. Real-World Applications & Examples
-Concrete practical examples of where and how this is used today.
+### 5. Key Terms (Simple Meanings)
+List 3-5 crucial terms. Format each term strictly as:
+- **Term (English Term)**: Simple meaning -> *Everyday Example*
 
 ### 6. Advantages & Key Limitations
-- **Advantages**: 2-3 key benefits.
-- **Limitations**: 2-3 constraints or challenges.
+- **Advantages**: 2-3 key benefits in plain terms.
+- **Limitations**: 2-3 constraints or challenges to be aware of.
 
 ### 7. Key Takeaway
-A short, memorable 1-2 sentence core message.
+A short, memorable 1-2 sentence core conclusion.
 
 === PART B: RESEARCH INTELLIGENCE REPORT ===
 ## 📊 Research Intelligence Report

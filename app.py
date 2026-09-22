@@ -8,10 +8,12 @@ import os
 import time
 from typing import Any, Dict, List, Optional
 import streamlit as st
+import streamlit.components.v1 as components
 
 from agent import ResearchAgent, ResearchSessionResult
 from config import AppConfig, config as default_config
 from report_generator import SUPPORTED_LANGUAGES
+from utils.voice_component import get_voice_controller_html
 from utils.helpers import (
     build_html_printable_export,
     build_json_export,
@@ -619,6 +621,13 @@ if result:
                 unsafe_allow_html=True,
             )
             
+            # Browser Speech Synthesis Voice Suite & Text Selection Listener
+            clean_tutor_text = clean_text(result.teaching_markdown[:1800]).replace('"', "'")
+            components.html(
+                get_voice_controller_html(result.language, clean_tutor_text),
+                height=75,
+            )
+            
             if is_rtl:
                 st.markdown(f'<div class="rtl-container">{result.teaching_markdown}</div>', unsafe_allow_html=True)
             else:
@@ -634,6 +643,12 @@ if result:
                 unsafe_allow_html=True,
             )
             
+            clean_report_text = clean_text(result.report_markdown[:1800]).replace('"', "'")
+            components.html(
+                get_voice_controller_html(result.language, clean_report_text),
+                height=75,
+            )
+
             if is_rtl:
                 st.markdown(f'<div class="rtl-container">{result.report_markdown}</div>', unsafe_allow_html=True)
             else:

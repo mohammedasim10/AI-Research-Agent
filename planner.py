@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 class ResearchPlan:
     """Structured breakdown and execution plan for a research topic."""
     core_question: str
+    research_target: str
     intent_summary: str
     detected_domain: str
     research_dimensions: List[str]
@@ -151,18 +152,20 @@ Return strictly JSON matching this structure:
             data = json.loads(cleaned_json)
 
             domain = data.get("detected_domain") or self._detect_domain_heuristics(cleaned_question)
+            target = data.get("research_target") or cleaned_question
             intent = data.get("intent_summary") or f"Investigate empirical evidence regarding: {cleaned_question}"
             dimensions = data.get("research_dimensions") or ["Core Concepts", "Current Status", "Key Challenges"]
             queries = data.get("search_queries") or [cleaned_question]
             target_evidence = data.get("target_evidence_types") or ["Articles", "Case Studies", "Technical Analysis"]
 
-            # Filter & clean queries
+            # Filter & clean queries - ensure the research target or a direct synonym is in every query
             clean_queries = [q.strip() for q in queries if q.strip()][:max_queries]
             if not clean_queries:
                 clean_queries = [cleaned_question]
 
             return ResearchPlan(
                 core_question=cleaned_question,
+                research_target=target,
                 intent_summary=intent,
                 detected_domain=domain,
                 research_dimensions=dimensions,
@@ -203,6 +206,7 @@ Return strictly JSON matching this structure:
 
             return ResearchPlan(
                 core_question=cleaned_question,
+                research_target=cleaned_question,
                 intent_summary=f"In-depth investigation of '{cleaned_question}'",
                 detected_domain=domain,
                 research_dimensions=["Overview & Fundamentals", "Current Trends & Applications", "Key Challenges & Tradeoffs"],
