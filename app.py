@@ -38,14 +38,12 @@ CUSTOM_CSS = """
 
 html, body, [class*="css"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    color: #1e293b;
-    background-color: #f8fafc;
 }
 
 /* Main Container padding */
 .main .block-container {
     max-width: 1040px;
-    padding-top: 2rem;
+    padding-top: 1.5rem;
     padding-bottom: 4rem;
     padding-left: 1.5rem;
     padding-right: 1.5rem;
@@ -53,30 +51,34 @@ html, body, [class*="css"] {
 
 /* Header Styles */
 .brand-title {
-    font-size: 2.2rem;
-    font-weight: 700;
-    color: #0f172a;
+    font-size: 2.3rem;
+    font-weight: 800;
     letter-spacing: -0.025em;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.35rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    color: var(--text-color, #0f172a);
 }
+
 .brand-subtitle {
     font-size: 1.05rem;
-    color: #475569;
+    color: var(--text-color, #475569);
+    opacity: 0.85;
     font-weight: 400;
     margin-bottom: 1.75rem;
+    line-height: 1.5;
 }
 
 /* Card Containers */
 .research-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: var(--secondary-background-color, #ffffff);
+    border: 1px solid rgba(148, 163, 184, 0.25);
     border-radius: 8px;
     padding: 1.5rem;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
     margin-bottom: 1.25rem;
+    color: var(--text-color, inherit);
 }
 
 /* Metric Badges */
@@ -84,9 +86,9 @@ html, body, [class*="css"] {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    background: #f1f5f9;
-    color: #334155;
-    border: 1px solid #cbd5e1;
+    background: var(--secondary-background-color, #f1f5f9);
+    color: var(--text-color, #334155);
+    border: 1px solid rgba(148, 163, 184, 0.3);
     border-radius: 6px;
     padding: 0.25rem 0.65rem;
     font-size: 0.825rem;
@@ -101,18 +103,19 @@ html, body, [class*="css"] {
     align-items: center;
     gap: 0.75rem;
     padding: 0.65rem 0.85rem;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: var(--secondary-background-color, #ffffff);
+    border: 1px solid rgba(148, 163, 184, 0.25);
     border-radius: 6px;
     margin-bottom: 0.5rem;
     font-size: 0.92rem;
+    color: var(--text-color, inherit);
 }
 .step-icon-completed {
-    color: #16a34a;
+    color: #22c55e;
     font-weight: 700;
 }
 .step-icon-running {
-    color: #2563eb;
+    color: #3b82f6;
     font-weight: 700;
     animation: pulse 1.5s infinite;
 }
@@ -128,20 +131,21 @@ html, body, [class*="css"] {
 
 /* Source Card */
 .source-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: var(--secondary-background-color, #ffffff);
+    border: 1px solid rgba(148, 163, 184, 0.25);
     border-radius: 6px;
     padding: 1rem 1.2rem;
     margin-bottom: 0.75rem;
     transition: border-color 0.15s ease;
+    color: var(--text-color, inherit);
 }
 .source-card:hover {
-    border-color: #93c5fd;
+    border-color: #3b82f6;
 }
 .source-title {
     font-size: 0.98rem;
     font-weight: 600;
-    color: #1d4ed8;
+    color: #3b82f6;
     text-decoration: none;
 }
 .source-title:hover {
@@ -149,15 +153,15 @@ html, body, [class*="css"] {
 }
 .source-meta {
     font-size: 0.8rem;
-    color: #64748b;
+    opacity: 0.75;
     margin-top: 0.2rem;
     margin-bottom: 0.5rem;
     font-family: 'JetBrains Mono', monospace;
 }
 .source-rationale {
     font-size: 0.875rem;
-    color: #334155;
-    background: #f8fafc;
+    color: var(--text-color, #334155);
+    background: rgba(59, 130, 246, 0.08);
     border-left: 3px solid #3b82f6;
     padding: 0.4rem 0.65rem;
     margin-top: 0.4rem;
@@ -183,9 +187,9 @@ div.stButton > button:first-child[kind="primary"]:hover {
 
 /* Citation Highlighting */
 .citation-badge {
-    background-color: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.3);
     border-radius: 4px;
     padding: 0.1rem 0.35rem;
     font-size: 0.775rem;
@@ -271,9 +275,12 @@ with st.sidebar:
 # -----------------------------------------------------------------------------
 # MAIN HEADER
 # -----------------------------------------------------------------------------
-st.markdown('<div class="brand-title">🔬 ResearchAI</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="brand-subtitle">Autonomous multi-source research engine. Searches the live web, cross-checks evidence, and produces structured, cited intelligence reports.</div>',
+    '<h1 style="font-weight: 800; font-size: 2.3rem; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.5rem; letter-spacing: -0.02em;">🔬 Research<span style="color: #3b82f6;">AI</span></h1>',
+    unsafe_allow_html=True,
+)
+st.markdown(
+    '<p style="font-size: 1.05rem; opacity: 0.85; margin-bottom: 1.75rem; line-height: 1.5;">Autonomous multi-source research engine. Searches the live web, cross-checks evidence, and produces structured, cited intelligence reports.</p>',
     unsafe_allow_html=True,
 )
 
