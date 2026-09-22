@@ -309,3 +309,29 @@ class ResearchAgent:
         session_result.metrics["language"] = lang_code
 
         return session_result
+
+    def answer_followup(
+        self,
+        original_session: ResearchSessionResult,
+        followup_question: str,
+        language: str = "en",
+        mode: str = "deep",
+        on_progress: Optional[Callable[[str, str, str, Optional[Dict[str, Any]]], None]] = None,
+    ) -> ResearchSessionResult:
+        """
+        Processes a contextual follow-up question, preserving the original research foundation
+        while addressing the specific follow-up topic directly.
+        """
+        clean_followup = followup_question.strip()
+        if not clean_followup:
+            return original_session
+
+        # Formulate contextual investigation target
+        contextual_target = f"{original_session.question} (Follow-up: {clean_followup})"
+        return self.run(
+            question=contextual_target,
+            language=language,
+            mode=mode,
+            on_progress=on_progress,
+        )
+

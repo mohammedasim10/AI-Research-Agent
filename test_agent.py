@@ -163,6 +163,7 @@ class TestVoiceComponent(unittest.TestCase):
         self.assertIn("en-US", html_en)
         self.assertIn("English", html_en)
         self.assertIn("speechSynthesis", html_en)
+        self.assertIn("Direct Answer", html_en)
         
         # Hindi
         html_hi = get_voice_controller_html("hi", "परीक्षण हिन्दी पाठ")
@@ -180,6 +181,25 @@ class TestVoiceComponent(unittest.TestCase):
         self.assertIn("العربية", html_ar)
 
 
+class TestAgentFollowup(unittest.TestCase):
+    def test_followup_empty_returns_original(self):
+        from agent import ResearchAgent, ResearchSessionResult
+        agent = ResearchAgent(api_key="mock_key_for_testing_heuristics_1234567")
+        dummy_session = ResearchSessionResult(
+            question="What is RAG?",
+            success=True,
+            plan=None,
+            sources=[],
+            analysis=None,
+            report_markdown="RAG Report",
+            teaching_markdown="RAG Guide",
+            language="en",
+        )
+        res = agent.answer_followup(dummy_session, "")
+        self.assertEqual(res.question, "What is RAG?")
+
+
 if __name__ == "__main__":
     unittest.main()
+
 

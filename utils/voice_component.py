@@ -1,8 +1,8 @@
 """
 voice_component.py - Client-Side Web Speech API Voice Engine & Highlight-to-Listen Controller.
 Provides in-browser zero-latency text-to-speech, interactive selection read-aloud,
-speed regulation (0.75x - 1.5x), strict language-to-voice matching (English, Hindi, Telugu, Arabic),
-dynamic voice discovery, and explicit no-fallback device voice warning badges.
+section-by-section listen buttons, speed regulation (0.75x - 1.5x), strict language-to-voice matching
+(English, Hindi, Telugu, Arabic), dynamic voice discovery, and explicit no-fallback device voice warning badges.
 """
 
 import json
@@ -46,6 +46,7 @@ HTML_TEMPLATE = r"""
             background: transparent;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             color: var(--voice-text);
+            box-sizing: border-box;
         }
         .voice-dock {
             display: flex;
@@ -57,26 +58,27 @@ HTML_TEMPLATE = r"""
             border-radius: 8px;
             color: var(--voice-text);
         }
-        .voice-controls-row {
+        .voice-controls-row, .voice-sections-row {
             display: flex;
             align-items: center;
             flex-wrap: wrap;
-            gap: 0.65rem;
+            gap: 0.5rem;
         }
         .voice-btn {
             background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
             color: #ffffff !important;
             border: 1px solid #1e40af !important;
             border-radius: 6px;
-            padding: 0.4rem 0.85rem;
-            font-size: 0.85rem;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.825rem;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 0.35rem;
+            gap: 0.3rem;
             transition: all 0.15s ease;
             box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
+            white-space: nowrap;
         }
         .voice-btn:hover {
             background: #1d4ed8 !important;
@@ -94,16 +96,33 @@ HTML_TEMPLATE = r"""
             color: #3b82f6 !important;
             transform: translateY(-1px);
         }
+        .voice-section-btn {
+            background: rgba(59, 130, 246, 0.1) !important;
+            color: var(--voice-text) !important;
+            border: 1px solid rgba(59, 130, 246, 0.35) !important;
+            border-radius: 5px;
+            padding: 0.25rem 0.6rem;
+            font-size: 0.775rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .voice-section-btn:hover {
+            background: #2563eb !important;
+            color: #ffffff !important;
+            border-color: #1d4ed8 !important;
+        }
         .voice-select, .voice-speed-select {
             background: var(--voice-sec-bg);
             color: var(--voice-text);
             border: 1.5px solid var(--voice-sec-border);
             border-radius: 6px;
-            padding: 0.35rem 0.6rem;
-            font-size: 0.825rem;
+            padding: 0.3rem 0.55rem;
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
-            max-width: 220px;
+            max-width: 200px;
         }
         .voice-status-row {
             display: flex;
@@ -141,7 +160,7 @@ HTML_TEMPLATE = r"""
             border-radius: 6px;
             padding: 0.5rem 0.75rem;
             font-size: 0.825rem;
-            margin-top: 0.35rem;
+            margin-top: 0.25rem;
             line-height: 1.4;
         }
 
@@ -168,10 +187,10 @@ HTML_TEMPLATE = r"""
     </style>
 
     <div class="voice-dock">
-        <!-- Top Controls Row -->
+        <!-- Row 1: Primary Controls & Dropdowns -->
         <div class="voice-controls-row">
-            <button class="voice-btn" id="btn-speak-main" onclick="speakTargetText()">
-                🔊 <span>Listen to Summary</span>
+            <button class="voice-btn" id="btn-speak-main" onclick="handleMainListenClick()">
+                🔊 <span>Listen</span>
             </button>
             <button class="voice-btn voice-btn-secondary" id="btn-pause" onclick="pauseSpeech()">
                 ⏸ <span>Pause</span>
@@ -180,12 +199,12 @@ HTML_TEMPLATE = r"""
                 ⏹ <span>Stop</span>
             </button>
 
-            <span style="font-size: 0.825rem; font-weight: 600; margin-left: 0.25rem;">Voice:</span>
+            <span style="font-size: 0.8rem; font-weight: 600; margin-left: 0.15rem;">Voice:</span>
             <select class="voice-select" id="voice-select" onchange="updateSelectedVoice(this.value)">
                 <option value="" disabled selected>🔍 Scanning device voices...</option>
             </select>
 
-            <span style="font-size: 0.825rem; font-weight: 600;">Speed:</span>
+            <span style="font-size: 0.8rem; font-weight: 600;">Speed:</span>
             <select class="voice-speed-select" id="speed-select" onchange="updateRate(this.value)">
                 <option value="0.75">0.75x</option>
                 <option value="1.0" selected>1.0x (Normal)</option>
@@ -194,15 +213,25 @@ HTML_TEMPLATE = r"""
             </select>
         </div>
 
-        <!-- Bottom Status Row -->
+        <!-- Row 2: Section Quick-Listen Buttons -->
+        <div class="voice-sections-row">
+            <span style="font-size: 0.775rem; font-weight: 700; opacity: 0.85;">Read Section:</span>
+            <button class="voice-section-btn" onclick="speakSection('direct')">🎯 Direct Answer</button>
+            <button class="voice-section-btn" onclick="speakSection('what')">🎓 Understand</button>
+            <button class="voice-section-btn" onclick="speakSection('how')">⚙️ How It Works</button>
+            <button class="voice-section-btn" onclick="speakSection('example')">💡 Simple Example</button>
+            <button class="voice-section-btn" onclick="speakSection('takeaway')">📌 Key Takeaway</button>
+        </div>
+
+        <!-- Row 3: Status & Tips -->
         <div class="voice-status-row">
             <div id="voice-status-container">
                 <span class="status-badge status-warn" id="voice-status-badge">
                     🔍 Inspecting device voices for __TARGET_LANG_NAME__...
                 </span>
             </div>
-            <div style="opacity: 0.8; font-size: 0.775rem;">
-                💡 Highlight any text on screen to listen in <b>__TARGET_NATIVE_NAME__</b>
+            <div style="opacity: 0.8; font-size: 0.75rem;">
+                💡 Highlight text on screen to speak selection in <b>__TARGET_NATIVE_NAME__</b>
             </div>
         </div>
 
@@ -227,6 +256,7 @@ HTML_TEMPLATE = r"""
             let compatibleVoices = [];
             let activeVoice = null;
             let defaultArticleText = __DEFAULT_TEXT_JSON__;
+            let currentSelectionText = "";
 
             function updateStatusDisplay(isAvailable, voiceName) {
                 const badge = document.getElementById('voice-status-badge');
@@ -248,7 +278,7 @@ HTML_TEMPLATE = r"""
                     banner.style.display = 'block';
                     setTimeout(() => {
                         banner.style.display = 'none';
-                    }, 7000);
+                    }, 8000);
                 }
             }
 
@@ -275,7 +305,6 @@ HTML_TEMPLATE = r"""
                             opt.text = v.name + " (" + v.lang + ")";
                             voiceSelect.appendChild(opt);
                         });
-                        // Pick the first compatible voice
                         activeVoice = compatibleVoices[0];
                         voiceSelect.selectedIndex = 0;
                         updateStatusDisplay(true, activeVoice.name);
@@ -314,7 +343,7 @@ HTML_TEMPLATE = r"""
             window.stopSpeech = function() {
                 if (synth) synth.cancel();
                 const btn = document.getElementById('btn-speak-main');
-                if (btn) btn.innerHTML = "🔊 <span>Listen to Summary</span>";
+                if (btn) btn.innerHTML = "🔊 <span>Listen</span>";
             };
 
             window.pauseSpeech = function() {
@@ -338,7 +367,7 @@ HTML_TEMPLATE = r"""
 
                 // STRICT VALIDATION: DO NOT silently use English voice if target language is not English
                 if (!activeVoice && targetLangCode !== 'en-US') {
-                    showWarningMessage("Your device does not currently provide a " + targetLangName + " (" + targetNativeName + ") voice. Please install/enable a " + targetLangName + " speech voice in your device/browser settings.");
+                    showWarningMessage("Your device does not currently provide a native voice for " + targetLangName + " (" + targetNativeName + "). Please install or enable a " + targetLangName + " speech voice in your device/browser settings.");
                     return;
                 }
 
@@ -361,18 +390,21 @@ HTML_TEMPLATE = r"""
                     if (btn) btn.innerHTML = "🔊 <span>Speaking...</span>";
                 };
                 utterance.onend = function() {
-                    if (btn) btn.innerHTML = "🔊 <span>Listen to Summary</span>";
+                    if (btn) btn.innerHTML = "🔊 <span>Listen</span>";
                 };
                 utterance.onerror = function() {
-                    if (btn) btn.innerHTML = "🔊 <span>Listen to Summary</span>";
+                    if (btn) btn.innerHTML = "🔊 <span>Listen</span>";
                 };
 
                 synth.speak(utterance);
             };
 
-            window.speakTargetText = function() {
-                if (defaultArticleText) {
-                    speakTextContent(defaultArticleText);
+            // Main Listen Button: Priority given to selected text if highlighted, otherwise speaks summary
+            window.handleMainListenClick = function() {
+                if (currentSelectionText && currentSelectionText.length >= 3) {
+                    speakTextContent(currentSelectionText);
+                } else if (defaultArticleText) {
+                    speakTextContent(defaultArticleText.slice(0, 1500));
                 } else {
                     try {
                         const parentDoc = window.parent.document;
@@ -386,6 +418,34 @@ HTML_TEMPLATE = r"""
                 }
             };
 
+            // Section Reader: Extracts and reads ONLY that section
+            window.speakSection = function(sectionKey) {
+                const text = defaultArticleText || "";
+                let sectionText = "";
+
+                if (sectionKey === 'direct') {
+                    const m = text.match(/(?:Direct Answer|प्रत्यक्ष उत्तर|ప్రత్యక్ష సమాధానం|الإجابة المباشرة)([\s\S]*?)(?:###|##|$)/i);
+                    sectionText = m ? m[1] : text.slice(0, 500);
+                } else if (sectionKey === 'what') {
+                    const m = text.match(/(?:What is it|यह क्या है|ఇది ఏమిటి|ما هو)([\s\S]*?)(?:###|##|$)/i);
+                    sectionText = m ? m[1] : text.slice(0, 600);
+                } else if (sectionKey === 'how') {
+                    const m = text.match(/(?:How Does It Work|यह कैसे काम करता है|ఇది ఎలా పనిచేస్తుంది|كيف يعمل)([\s\S]*?)(?:###|##|$)/i);
+                    sectionText = m ? m[1] : text.slice(200, 800);
+                } else if (sectionKey === 'example') {
+                    const m = text.match(/(?:Simple Everyday Example|सरल उदाहरण|సాధారణ ఉదాహరణ|مثال بسيط)([\s\S]*?)(?:###|##|$)/i);
+                    sectionText = m ? m[1] : text.slice(400, 1000);
+                } else if (sectionKey === 'takeaway') {
+                    const m = text.match(/(?:Key Takeaway|मुख्य निष्कर्ष|ముఖ్యమైన ముగింపు|الخلاصة الرئيسية)([\s\S]*?)(?:###|##|$)/i);
+                    sectionText = m ? m[1] : text.slice(-400);
+                }
+
+                if (!sectionText || sectionText.trim().length < 5) {
+                    sectionText = text.slice(0, 600);
+                }
+                speakTextContent(sectionText);
+            };
+
             // Selection Listener across parent and iframe window
             function handleTextSelection(e) {
                 try {
@@ -395,6 +455,7 @@ HTML_TEMPLATE = r"""
                     const pill = document.getElementById('floating-listen-pill');
 
                     if (selectedText.length >= 3) {
+                        currentSelectionText = selectedText;
                         const range = selection.getRangeAt(0);
                         const rect = range.getBoundingClientRect();
                         if (pill) {
@@ -404,6 +465,7 @@ HTML_TEMPLATE = r"""
                             pill.dataset.selected = selectedText;
                         }
                     } else {
+                        currentSelectionText = "";
                         if (pill) pill.style.display = 'none';
                     }
                 } catch (err) {}
@@ -412,7 +474,7 @@ HTML_TEMPLATE = r"""
             window.speakSelectedText = function(e) {
                 if (e) e.stopPropagation();
                 const pill = document.getElementById('floating-listen-pill');
-                const text = pill ? pill.dataset.selected : "";
+                const text = pill ? pill.dataset.selected : currentSelectionText;
                 if (text) {
                     speakTextContent(text);
                 }

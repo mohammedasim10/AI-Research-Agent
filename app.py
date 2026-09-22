@@ -449,9 +449,9 @@ st.markdown(
 # -----------------------------------------------------------------------------
 lang_options = {
     "English": "en",
-    "हिन्दी (Hindi)": "hi",
-    "తెలుగు (Telugu)": "te",
-    "العربية (Arabic)": "ar",
+    "हिन्दी": "hi",
+    "తెలుగు": "te",
+    "العربية": "ar",
 }
 lang_keys = list(lang_options.keys())
 
@@ -476,7 +476,7 @@ with col_lang:
             break
 
     selected_lang_label = st.selectbox(
-        "🌐 Research Language:",
+        "🌐 Language:",
         options=lang_keys,
         index=default_lang_idx,
     )
@@ -702,7 +702,7 @@ if result:
             clean_tutor_text = clean_text(result.teaching_markdown[:1800]).replace('"', "'")
             components.html(
                 get_voice_controller_html(result.language, clean_tutor_text),
-                height=105,
+                height=140,
             )
             
             if is_rtl:
@@ -723,7 +723,7 @@ if result:
             clean_report_text = clean_text(result.report_markdown[:1800]).replace('"', "'")
             components.html(
                 get_voice_controller_html(result.language, clean_report_text),
-                height=105,
+                height=140,
             )
 
             if is_rtl:
@@ -929,3 +929,47 @@ if result:
 
             with st.expander("Preview Raw Markdown Dossier"):
                 st.code(md_content, language="markdown")
+
+        # ---------------------------------------------------------------------
+        # FOLLOW-UP RESEARCH INQUIRY
+        # ---------------------------------------------------------------------
+        st.markdown("---")
+        st.markdown("### 💬 Ask a Follow-up Question")
+        st.caption(f"Ask a deeper, related, or clarifying question while maintaining the complete research context of **{result.question}**.")
+
+        col_fu_input, col_fu_btn = st.columns([5, 1.4])
+        with col_fu_input:
+            followup_input = st.text_input(
+                "Ask a follow-up question:",
+                placeholder=f"e.g., Give me a simple real-world example...",
+                key="followup_query_field",
+                label_visibility="collapsed",
+            )
+        with col_fu_btn:
+            followup_clicked = st.button("Ask Follow-up 🚀", type="primary", use_container_width=True, key="btn_followup_ask")
+
+        if followup_clicked:
+            target_followup = followup_input.strip()
+            if not target_followup:
+                st.warning("Please enter a follow-up question before submitting.", icon="⚠️")
+            elif not api_key_input:
+                st.error("Gemini API Key required to continue investigation.", icon="🔑")
+            else:
+                runtime_config = AppConfig(
+                    gemini_api_key=api_key_input,
+                    gemini_model=model_choice,
+                    max_search_queries=max_queries,
+                    max_total_sources=max_sources,
+                )
+                agent = ResearchAgent(api_key=api_key_input, config=runtime_config)
+                with st.spinner(f"Investigating follow-up: '{target_followup}'..."):
+                    updated_session = agent.answer_followup(
+                        original_session=result,
+                        followup_question=target_followup,
+                        language=chosen_lang,
+                        mode=chosen_mode,
+                    )
+                    st.session_state["research_result"] = updated_session
+                    st.session_state["current_question"] = updated_session.question
+                    st.rerun()
+
