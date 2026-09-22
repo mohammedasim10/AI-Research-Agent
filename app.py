@@ -208,6 +208,8 @@ if "research_result" not in st.session_state:
     st.session_state["research_result"] = None
 if "current_question" not in st.session_state:
     st.session_state["current_question"] = ""
+if "main_query_input" not in st.session_state:
+    st.session_state["main_query_input"] = ""
 if "research_stages" not in st.session_state:
     st.session_state["research_stages"] = {}
 if "activity_logs" not in st.session_state:
@@ -267,6 +269,7 @@ with st.sidebar:
         if st.button("🗑️ Clear Session & Start Fresh", use_container_width=True):
             st.session_state["research_result"] = None
             st.session_state["current_question"] = ""
+            st.session_state["main_query_input"] = ""
             st.session_state["research_stages"] = {}
             st.session_state["activity_logs"] = []
             st.rerun()
@@ -295,15 +298,14 @@ example_questions = [
     "How does retrieval-augmented generation (RAG) mitigate LLM hallucinations?",
 ]
 
-def set_question(q_text: str):
-    st.session_state["input_question"] = q_text
+def populate_example_query(q_text: str):
+    st.session_state["main_query_input"] = q_text
 
 col_input, col_btn = st.columns([5, 1.2])
 
 with col_input:
     user_query = st.text_input(
         "Enter your research question:",
-        value=st.session_state.get("input_question", ""),
         placeholder="e.g., What are the latest breakthroughs in solid-state battery technology?",
         label_visibility="collapsed",
         key="main_query_input",
@@ -313,13 +315,17 @@ with col_btn:
     start_clicked = st.button("Start Research", type="primary", use_container_width=True)
 
 # Example pills
-st.markdown("<p style='font-size: 0.85rem; color: #64748b; margin-top: 0.25rem; margin-bottom: 0.4rem;'>💡 <b>Example investigations:</b></p>", unsafe_allow_html=True)
+st.markdown("<p style='font-size: 0.85rem; opacity: 0.8; margin-top: 0.25rem; margin-bottom: 0.4rem;'>💡 <b>Example investigations:</b></p>", unsafe_allow_html=True)
 pill_cols = st.columns(len(example_questions))
 for i, eq in enumerate(example_questions):
     with pill_cols[i]:
-        if st.button(eq, key=f"pill_{i}", use_container_width=True):
-            st.session_state["input_question"] = eq
-            st.rerun()
+        st.button(
+            eq,
+            key=f"pill_{i}",
+            use_container_width=True,
+            on_click=populate_example_query,
+            args=(eq,),
+        )
 
 st.markdown("<div style='margin-bottom: 1.5rem;'></div>", unsafe_allow_html=True)
 
