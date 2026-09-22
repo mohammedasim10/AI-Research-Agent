@@ -255,21 +255,98 @@ html, body, [class*="css"] {
     border-radius: 0 4px 4px 0;
 }
 
-/* Action Buttons */
-div.stButton > button {
-    border-radius: 6px;
-    font-weight: 500;
-    font-size: 0.925rem;
-    transition: all 0.15s ease;
+/* ========================================================================= */
+/* UNIVERSAL BUTTON STYLING (DARK & LIGHT THEME HIGH CONTRAST)              */
+/* ========================================================================= */
+
+/* Base styling for all Streamlit buttons & download buttons */
+div.stButton > button,
+div.stDownloadButton > button,
+button[data-testid*="baseButton"],
+div[data-testid="stButton"] > button,
+div[data-testid="stDownloadButton"] > button {
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    padding: 0.5rem 0.85rem !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    cursor: pointer !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.35 !important;
+    min-height: 2.75rem !important;
 }
-div.stButton > button:first-child[kind="primary"] {
-    background-color: #2563eb;
-    color: #ffffff;
-    border: 1px solid #1d4ed8;
+
+/* Primary Action Buttons (e.g. Start Research 🚀) */
+div.stButton > button[kind="primary"],
+div.stButton > button[data-testid="baseButton-primary"],
+button[data-testid="baseButton-primary"],
+div[data-testid="stButton"] > button[kind="primary"],
+div[data-testid="stButton"] > button[data-testid="baseButton-primary"] {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    color: #ffffff !important;
+    border: 1.5px solid #1e40af !important;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35) !important;
+    font-weight: 700 !important;
 }
-div.stButton > button:first-child[kind="primary"]:hover {
-    background-color: #1d4ed8;
-    border-color: #1e40af;
+
+div.stButton > button[kind="primary"]:hover,
+div.stButton > button[data-testid="baseButton-primary"]:hover,
+button[data-testid="baseButton-primary"]:hover,
+div[data-testid="stButton"] > button[kind="primary"]:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+    border-color: #1e3a8a !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.5) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Secondary Action Buttons & Suggestion Pills */
+div.stButton > button[kind="secondary"],
+div.stButton > button[data-testid="baseButton-secondary"],
+button[data-testid="baseButton-secondary"],
+div[data-testid="stButton"] > button[kind="secondary"],
+div.stButton > button:not([kind="primary"]) {
+    background-color: rgba(128, 128, 128, 0.12) !important;
+    color: inherit !important;
+    border: 1.5px solid rgba(128, 128, 128, 0.38) !important;
+    font-weight: 500 !important;
+}
+
+div.stButton > button[kind="secondary"]:hover,
+div.stButton > button[data-testid="baseButton-secondary"]:hover,
+button[data-testid="baseButton-secondary"]:hover,
+div[data-testid="stButton"] > button[kind="secondary"]:hover,
+div.stButton > button:not([kind="primary"]):hover {
+    background-color: rgba(59, 130, 246, 0.16) !important;
+    border-color: #3b82f6 !important;
+    color: #3b82f6 !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Download Dossier Export Buttons */
+div.stDownloadButton > button,
+div[data-testid="stDownloadButton"] > button {
+    background: rgba(59, 130, 246, 0.1) !important;
+    color: inherit !important;
+    border: 1.5px solid rgba(59, 130, 246, 0.45) !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+}
+
+div.stDownloadButton > button:hover,
+div[data-testid="stDownloadButton"] > button:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    color: #ffffff !important;
+    border-color: #1e40af !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4) !important;
+    transform: translateY(-1px) !important;
 }
 </style>
 """

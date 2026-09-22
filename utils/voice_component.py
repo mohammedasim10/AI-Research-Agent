@@ -23,79 +23,110 @@ def get_voice_controller_html(language_code: str = "en", default_text: str = "")
     sanitized_default = json.dumps(default_text)
 
     html_code = f"""
-    <div id="voice-engine-root" style="margin-top: 0.75rem; margin-bottom: 1.25rem;">
+    <div id="voice-engine-root" style="margin-top: 0.5rem; margin-bottom: 1rem;">
         <style>
-            .voice-dock {{
+            :root {
+                --voice-text: #1e293b;
+                --voice-bg: rgba(0, 0, 0, 0.04);
+                --voice-border: rgba(0, 0, 0, 0.15);
+                --voice-sec-bg: #e2e8f0;
+                --voice-sec-border: #cbd5e1;
+            }
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --voice-text: #f1f5f9;
+                    --voice-bg: rgba(255, 255, 255, 0.06);
+                    --voice-border: rgba(255, 255, 255, 0.18);
+                    --voice-sec-bg: rgba(255, 255, 255, 0.12);
+                    --voice-sec-border: rgba(255, 255, 255, 0.25);
+                }
+            }
+            body {
+                margin: 0;
+                padding: 0;
+                background: transparent;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                color: var(--voice-text);
+            }
+            .voice-dock {
                 display: flex;
                 align-items: center;
                 flex-wrap: wrap;
                 gap: 0.65rem;
                 padding: 0.65rem 0.95rem;
-                background: rgba(128, 128, 128, 0.08);
-                border: 1px solid rgba(128, 128, 128, 0.22);
+                background: var(--voice-bg);
+                border: 1.5px solid var(--voice-border);
                 border-radius: 8px;
-                color: inherit;
-                font-family: inherit;
-            }}
-            .voice-btn {{
-                background: #2563eb;
-                color: #ffffff;
-                border: none;
+                color: var(--voice-text);
+            }
+            .voice-btn {
+                background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+                color: #ffffff !important;
+                border: 1px solid #1e40af !important;
                 border-radius: 6px;
-                padding: 0.35rem 0.75rem;
+                padding: 0.4rem 0.85rem;
                 font-size: 0.85rem;
                 font-weight: 600;
                 cursor: pointer;
                 display: inline-flex;
                 align-items: center;
-                gap: 0.3rem;
-                transition: background 0.15s ease;
-            }}
-            .voice-btn:hover {{
-                background: #1d4ed8;
-            }}
-            .voice-btn-secondary {{
-                background: rgba(128, 128, 128, 0.15);
-                color: inherit;
-                border: 1px solid rgba(128, 128, 128, 0.3);
-            }}
-            .voice-btn-secondary:hover {{
-                background: rgba(128, 128, 128, 0.25);
-            }}
-            .voice-speed-select {{
-                background: rgba(128, 128, 128, 0.1);
-                color: inherit;
-                border: 1px solid rgba(128, 128, 128, 0.3);
+                gap: 0.35rem;
+                transition: all 0.15s ease;
+                box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
+            }
+            .voice-btn:hover {
+                background: #1d4ed8 !important;
+                transform: translateY(-1px);
+            }
+            .voice-btn-secondary {
+                background: var(--voice-sec-bg) !important;
+                color: var(--voice-text) !important;
+                border: 1.5px solid var(--voice-sec-border) !important;
+                box-shadow: none;
+                font-weight: 600;
+            }
+            .voice-btn-secondary:hover {
+                border-color: #3b82f6 !important;
+                color: #3b82f6 !important;
+                transform: translateY(-1px);
+            }
+            .voice-speed-select {
+                background: var(--voice-sec-bg);
+                color: var(--voice-text);
+                border: 1.5px solid var(--voice-sec-border);
                 border-radius: 6px;
-                padding: 0.3rem 0.55rem;
+                padding: 0.35rem 0.6rem;
                 font-size: 0.825rem;
-            }}
-            .voice-status {{
+                font-weight: 600;
+                cursor: pointer;
+            }
+            .voice-status {
                 font-size: 0.8rem;
-                opacity: 0.8;
+                opacity: 0.9;
                 font-family: monospace;
-            }}
+                font-weight: 500;
+            }
             
             /* Floating Highlight-to-Listen Action Pill */
-            #floating-listen-pill {{
+            #floating-listen-pill {
                 position: fixed;
                 display: none;
                 z-index: 999999;
-                background: #1e293b;
+                background: #0f172a;
                 color: #ffffff;
-                border: 1px solid #3b82f6;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+                border: 1.5px solid #3b82f6;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.35);
                 border-radius: 20px;
-                padding: 0.4rem 0.85rem;
+                padding: 0.45rem 0.95rem;
                 font-size: 0.85rem;
                 font-weight: 600;
                 cursor: pointer;
                 transition: transform 0.1s ease, opacity 0.15s ease;
-            }}
-            #floating-listen-pill:hover {{
+            }
+            #floating-listen-pill:hover {
                 background: #2563eb;
                 transform: scale(1.05);
-            }}
+            }
         </style>
 
         <div class="voice-dock">
