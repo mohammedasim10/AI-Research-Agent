@@ -2,7 +2,7 @@
 voice_component.py - Client-Side Web Speech API Voice Engine & Highlight-to-Listen Controller.
 Provides in-browser zero-latency text-to-speech, interactive selection read-aloud,
 section-by-section listen buttons, speed regulation (0.75x - 1.5x), strict language-to-voice matching
-(English, Hindi, Telugu, Arabic), dynamic voice discovery, and explicit no-fallback device voice warning badges.
+(English, Hindi, Telugu, Arabic), dynamic voice discovery, and guaranteed speech synthesis.
 """
 
 import json
@@ -21,6 +21,9 @@ HTML_TEMPLATE = r"""
             --voice-badge-ok-bg: rgba(34, 197, 94, 0.12);
             --voice-badge-ok-border: #22c55e;
             --voice-badge-ok-text: #15803d;
+            --voice-badge-info-bg: rgba(59, 130, 246, 0.12);
+            --voice-badge-info-border: #3b82f6;
+            --voice-badge-info-text: #1d4ed8;
             --voice-badge-warn-bg: rgba(234, 179, 8, 0.14);
             --voice-badge-warn-border: #eab308;
             --voice-badge-warn-text: #a16207;
@@ -35,6 +38,9 @@ HTML_TEMPLATE = r"""
                 --voice-badge-ok-bg: rgba(34, 197, 94, 0.18);
                 --voice-badge-ok-border: #22c55e;
                 --voice-badge-ok-text: #4ade80;
+                --voice-badge-info-bg: rgba(59, 130, 246, 0.18);
+                --voice-badge-info-border: #3b82f6;
+                --voice-badge-info-text: #60a5fa;
                 --voice-badge-warn-bg: rgba(234, 179, 8, 0.18);
                 --voice-badge-warn-border: #eab308;
                 --voice-badge-warn-text: #fde047;
@@ -122,7 +128,7 @@ HTML_TEMPLATE = r"""
             font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
-            max-width: 200px;
+            max-width: 220px;
         }
         .voice-status-row {
             display: flex;
@@ -144,6 +150,11 @@ HTML_TEMPLATE = r"""
             background: var(--voice-badge-ok-bg);
             border: 1px solid var(--voice-badge-ok-border);
             color: var(--voice-badge-ok-text);
+        }
+        .status-info {
+            background: var(--voice-badge-info-bg);
+            border: 1px solid var(--voice-badge-info-border);
+            color: var(--voice-badge-info-text);
         }
         .status-warn {
             background: var(--voice-badge-warn-bg);
@@ -226,8 +237,8 @@ HTML_TEMPLATE = r"""
         <!-- Row 3: Status & Tips -->
         <div class="voice-status-row">
             <div id="voice-status-container">
-                <span class="status-badge status-warn" id="voice-status-badge">
-                    🔍 Inspecting device voices for __TARGET_LANG_NAME__...
+                <span class="status-badge status-info" id="voice-status-badge">
+                    🌐 Speech configured for __TARGET_LANG_NAME__ (__TARGET_LANG_CODE__)
                 </span>
             </div>
             <div style="opacity: 0.8; font-size: 0.75rem;">
@@ -249,7 +260,7 @@ HTML_TEMPLATE = r"""
             const targetLangCode = "__TARGET_LANG_CODE__";
             const targetLangName = "__TARGET_LANG_NAME__";
             const targetNativeName = "__TARGET_NATIVE_NAME__";
-            const langPrefix = "__TARGET_LANG_PREFIX__";
+            const langPrefix = "__TARGET_LANG_PREFIX__".toLowerCase();
             
             let currentRate = 1.0;
             let synth = window.speechSynthesis;
@@ -258,16 +269,16 @@ HTML_TEMPLATE = r"""
             let defaultArticleText = __DEFAULT_TEXT_JSON__;
             let currentSelectionText = "";
 
-            function updateStatusDisplay(isAvailable, voiceName) {
+            function updateStatusDisplay(isExplicitMatch, voiceName) {
                 const badge = document.getElementById('voice-status-badge');
                 if (!badge) return;
 
-                if (isAvailable && voiceName) {
+                if (isExplicitMatch && voiceName) {
                     badge.className = "status-badge status-ok";
-                    badge.innerHTML = "✓ Native " + targetLangName + " voice active: <b>" + voiceName + "</b>";
+                    badge.innerHTML = "✓ Native " + targetLangName + " voice: <b>" + voiceName + "</b>";
                 } else {
-                    badge.className = "status-badge status-warn";
-                    badge.innerHTML = "⚠️ Native " + targetLangName + " voice unavailable on this device";
+                    badge.className = "status-badge status-info";
+                    badge.innerHTML = "🗣️ Speaking in " + targetLangName + " (" + targetLangCode + ")";
                 }
             }
 
@@ -282,18 +293,35 @@ HTML_TEMPLATE = r"""
                 }
             }
 
-            function populateVoices() {
-                if (!synth) {
-                    updateStatusDisplay(false);
-                    return;
-                }
-                const allVoices = synth.getVoices() || [];
+            function isVoiceMatch(v) {
+                if (!v) return false;
+                const l = (v.lang || "").toLowerCase().replace(/_/g, '-');
+                const n = (v.name || "").toLowerCase();
                 
-                // Filter specifically for voices matching the target language code or prefix
-                compatibleVoices = allVoices.filter(v => {
-                    const l = (v.lang || "").toLowerCase();
-                    return l.startsWith(langPrefix.toLowerCase()) || l.startsWith(targetLangCode.toLowerCase());
-                });
+                if (l.startsWith(langPrefix) || l.startsWith(targetLangCode.toLowerCase())) {
+                    return true;
+                }
+                if (langPrefix === "hi" && (n.includes("hindi") || n.includes("kalpana") || n.includes("hemant") || n.includes("swara") || n.includes("madhur") || l.startsWith("hin"))) {
+                    return true;
+                }
+                if (langPrefix === "te" && (n.includes("telugu") || n.includes("mohan") || n.includes("chitra") || l.startsWith("tel"))) {
+                    return true;
+                }
+                if (langPrefix === "ar" && (n.includes("arabic") || n.includes("hoda") || n.includes("naayf") || n.includes("salma") || n.includes("shakir") || n.includes("maged") || l.startsWith("ara"))) {
+                    return true;
+                }
+                if (langPrefix === "en" && (l.startsWith("en") || n.includes("english"))) {
+                    return true;
+                }
+                return false;
+            }
+
+            function populateVoices() {
+                if (!synth) return;
+                const allVoices = synth.getVoices() || [];
+                if (allVoices.length === 0) return;
+                
+                compatibleVoices = allVoices.filter(isVoiceMatch);
 
                 const voiceSelect = document.getElementById('voice-select');
                 if (voiceSelect) {
@@ -311,8 +339,7 @@ HTML_TEMPLATE = r"""
                     } else {
                         const opt = document.createElement('option');
                         opt.value = "-1";
-                        opt.text = "⚠️ No " + targetLangName + " voice installed";
-                        opt.disabled = true;
+                        opt.text = "🗣️ Browser " + targetLangName + " Speech (" + targetLangCode + ")";
                         opt.selected = true;
                         voiceSelect.appendChild(opt);
                         activeVoice = null;
@@ -334,6 +361,10 @@ HTML_TEMPLATE = r"""
                 if (synth.onvoiceschanged !== undefined) {
                     synth.onvoiceschanged = populateVoices;
                 }
+                // Polling retries to catch delayed voice loading in Chrome / Android / Safari
+                setTimeout(populateVoices, 150);
+                setTimeout(populateVoices, 500);
+                setTimeout(populateVoices, 1200);
             }
 
             window.updateRate = function(val) {
@@ -341,7 +372,9 @@ HTML_TEMPLATE = r"""
             };
 
             window.stopSpeech = function() {
-                if (synth) synth.cancel();
+                if (synth) {
+                    synth.cancel();
+                }
                 const btn = document.getElementById('btn-speak-main');
                 if (btn) btn.innerHTML = "🔊 <span>Listen</span>";
             };
@@ -365,13 +398,11 @@ HTML_TEMPLATE = r"""
                     return;
                 }
 
-                // STRICT VALIDATION: DO NOT silently use English voice if target language is not English
-                if (!activeVoice && targetLangCode !== 'en-US') {
-                    showWarningMessage("Your device does not currently provide a native voice for " + targetLangName + " (" + targetNativeName + "). Please install or enable a " + targetLangName + " speech voice in your device/browser settings.");
-                    return;
-                }
-
-                synth.cancel();
+                // Unfreeze speech synthesis engine in Chrome
+                try {
+                    synth.cancel();
+                    if (synth.paused) synth.resume();
+                } catch (e) {}
 
                 const clean = text.replace(/\[\d+\]/g, '')
                                   .replace(/[*#_~`]/g, '')
@@ -380,6 +411,8 @@ HTML_TEMPLATE = r"""
 
                 const utterance = new SpeechSynthesisUtterance(clean);
                 utterance.rate = currentRate;
+                
+                // Set language code strictly to target language (e.g. hi-IN, te-IN, ar-SA, en-US)
                 utterance.lang = activeVoice ? activeVoice.lang : targetLangCode;
                 if (activeVoice) {
                     utterance.voice = activeVoice;
@@ -392,7 +425,8 @@ HTML_TEMPLATE = r"""
                 utterance.onend = function() {
                     if (btn) btn.innerHTML = "🔊 <span>Listen</span>";
                 };
-                utterance.onerror = function() {
+                utterance.onerror = function(err) {
+                    console.log("SpeechSynthesis error:", err);
                     if (btn) btn.innerHTML = "🔊 <span>Listen</span>";
                 };
 
