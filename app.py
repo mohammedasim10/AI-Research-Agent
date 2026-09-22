@@ -88,26 +88,26 @@ html, body, [class*="css"] {
 
 /* Card Containers */
 .research-card {
-    background: var(--secondary-background-color, #ffffff);
-    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: rgba(128, 128, 128, 0.07);
+    border: 1px solid rgba(128, 128, 128, 0.22);
     border-radius: 8px;
     padding: 1.5rem;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
     margin-bottom: 1.25rem;
-    color: var(--text-color, inherit);
+    color: inherit;
 }
 
 .tutor-card {
-    background: rgba(59, 130, 246, 0.04);
-    border: 1px solid rgba(59, 130, 246, 0.25);
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.3);
     border-left: 4px solid #3b82f6;
     border-radius: 8px;
     padding: 1.5rem;
     margin-bottom: 1.25rem;
-    color: var(--text-color, inherit);
+    color: inherit;
 }
 .rtl-container .tutor-card {
-    border-left: 1px solid rgba(59, 130, 246, 0.25);
+    border-left: 1px solid rgba(59, 130, 246, 0.3);
     border-right: 4px solid #3b82f6;
 }
 
@@ -116,9 +116,9 @@ html, body, [class*="css"] {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    background: var(--secondary-background-color, #f1f5f9);
-    color: var(--text-color, #334155);
-    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: rgba(128, 128, 128, 0.1);
+    color: inherit;
+    border: 1px solid rgba(128, 128, 128, 0.25);
     border-radius: 6px;
     padding: 0.25rem 0.65rem;
     font-size: 0.825rem;
@@ -133,12 +133,12 @@ html, body, [class*="css"] {
     align-items: center;
     gap: 0.75rem;
     padding: 0.65rem 0.85rem;
-    background: var(--secondary-background-color, #ffffff);
-    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: rgba(128, 128, 128, 0.08);
+    border: 1px solid rgba(128, 128, 128, 0.22);
     border-radius: 6px;
     margin-bottom: 0.5rem;
     font-size: 0.92rem;
-    color: var(--text-color, inherit);
+    color: inherit;
 }
 .step-icon-completed {
     color: #22c55e;
@@ -161,46 +161,48 @@ html, body, [class*="css"] {
 
 /* Source Card */
 .source-card {
-    background: var(--secondary-background-color, #ffffff);
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    border-radius: 6px;
-    padding: 1rem 1.2rem;
-    margin-bottom: 0.75rem;
-    transition: border-color 0.15s ease;
-    color: var(--text-color, inherit);
+    background: rgba(128, 128, 128, 0.07);
+    border: 1px solid rgba(128, 128, 128, 0.22);
+    border-radius: 8px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 0.85rem;
+    transition: all 0.15s ease;
+    color: inherit;
 }
 .source-card:hover {
     border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
 }
 .source-title {
-    font-size: 0.98rem;
+    font-size: 1.02rem;
     font-weight: 600;
-    color: #3b82f6;
+    color: #3b82f6 !important;
     text-decoration: none;
 }
 .source-title:hover {
     text-decoration: underline;
 }
 .source-meta {
-    font-size: 0.8rem;
-    opacity: 0.75;
-    margin-top: 0.2rem;
+    font-size: 0.82rem;
+    opacity: 0.85;
+    margin-top: 0.25rem;
     margin-bottom: 0.5rem;
     font-family: 'JetBrains Mono', monospace;
+    color: inherit;
 }
 .source-rationale {
-    font-size: 0.875rem;
-    color: var(--text-color, #334155);
-    background: rgba(59, 130, 246, 0.08);
+    font-size: 0.89rem;
+    color: inherit;
+    background: rgba(59, 130, 246, 0.1);
     border-left: 3px solid #3b82f6;
-    padding: 0.4rem 0.65rem;
-    margin-top: 0.4rem;
-    border-radius: 0 4px 4px 0;
+    padding: 0.45rem 0.75rem;
+    margin-top: 0.45rem;
+    border-radius: 0 6px 6px 0;
 }
 .rtl-container .source-rationale {
     border-left: none;
     border-right: 3px solid #3b82f6;
-    border-radius: 4px 0 0 4px;
+    border-radius: 6px 0 0 6px;
 }
 
 /* Action Buttons */
