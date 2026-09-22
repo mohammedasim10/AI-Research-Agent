@@ -550,7 +550,7 @@ if start_clicked:
             "search": {"status": "pending", "desc": "Retrieve live web results across diverse sources"},
             "collect": {"status": "pending", "desc": "Extract body text, dates, and direct evidence"},
             "analyze": {"status": "pending", "desc": "Cross-check facts & detect genuine discrepancies"},
-            "report": {"status": "pending", "desc": f"Synthesize report & tutor guide in {selected_lang_label}"},
+            "report": {"status": "pending", "desc": "Synthesize empirical report & pedagogical tutor guide"},
         }
         st.session_state["activity_logs"] = []
 
