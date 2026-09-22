@@ -4,7 +4,9 @@ Supports English, Hindi, Telugu, and Arabic with RTL layouts, "Explain Simply" v
 dynamic language switching without re-searching, compact source cards, transparent diversity metrics, and multi-format exports.
 """
 
+import base64
 import os
+from pathlib import Path
 import time
 from typing import Any, Dict, List, Optional
 import streamlit as st
@@ -36,11 +38,40 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+def get_base64_bg_image(relative_path: str = "assets/background.png") -> str:
+    """Encodes background image as Base64 for seamless CSS injection."""
+    try:
+        p = Path(__file__).parent / relative_path
+        if p.exists():
+            with open(p, "rb") as f:
+                return base64.b64encode(f.read()).decode("utf-8")
+    except Exception:
+        pass
+    return ""
+
+_BG_BASE64 = get_base64_bg_image()
+_BG_CSS = f"""
+.stApp, [data-testid="stAppViewContainer"] {{
+    background-image: linear-gradient(rgba(10, 15, 29, 0.82), rgba(10, 15, 29, 0.88)), url("data:image/png;base64,{_BG_BASE64}") !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+}}
+[data-testid="stHeader"] {{
+    background: transparent !important;
+}}
+[data-testid="stSidebar"] {{
+    background: rgba(13, 20, 36, 0.88) !important;
+    backdrop-filter: blur(12px) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+}}
+""" if _BG_BASE64 else ""
+
 # -----------------------------------------------------------------------------
 # CUSTOM CSS: MINIMALIST, HIGH-CONTRAST ENTERPRISE & RTL SUPPORT
 # -----------------------------------------------------------------------------
-CUSTOM_CSS = """
-<style>
+CUSTOM_CSS = "<style>\n" + _BG_CSS + """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Telugu:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 html, body, [class*="css"] {
