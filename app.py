@@ -702,7 +702,7 @@ if result:
             clean_tutor_text = clean_text(result.teaching_markdown[:1800]).replace('"', "'")
             components.html(
                 get_voice_controller_html(result.language, clean_tutor_text),
-                height=75,
+                height=105,
             )
             
             if is_rtl:
@@ -723,7 +723,7 @@ if result:
             clean_report_text = clean_text(result.report_markdown[:1800]).replace('"', "'")
             components.html(
                 get_voice_controller_html(result.language, clean_report_text),
-                height=75,
+                height=105,
             )
 
             if is_rtl:
