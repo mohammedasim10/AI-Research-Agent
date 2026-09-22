@@ -133,17 +133,30 @@ class ResearchReportGenerator:
             title = src.get("title", "Untitled")
             domain = src.get("domain", "")
             url = src.get("url", "")
-            facts = "\n  - ".join(src.get("extracted_facts", [src.get("snippet", "")]))
+            
+            raw_facts = src.get("extracted_facts") or src.get("claims_supported") or src.get("extracted_evidence") or src.get("snippet") or ""
+            if isinstance(raw_facts, str):
+                raw_facts = [raw_facts] if raw_facts else ["Context retrieved from source."]
+            elif isinstance(raw_facts, list):
+                raw_facts = [str(f) for f in raw_facts if f]
+            else:
+                raw_facts = ["Context retrieved from source."]
+                
+            facts_str = "\n  - ".join(raw_facts) if raw_facts else "Context retrieved."
             sources_context.append(
                 f"[Source {src_id}]\n"
                 f"Title: {title}\n"
                 f"Domain: {domain}\n"
                 f"URL: {url}\n"
-                f"Extracted Evidence:\n  - {facts}\n"
+                f"Extracted Evidence:\n  - {facts_str}\n"
             )
         formatted_sources_block = "\n".join(sources_context)
 
-        consensus_block = "\n- ".join(analysis_result.consensus_findings) if analysis_result.consensus_findings else "None identified."
+        raw_consensus = analysis_result.consensus_findings or []
+        if isinstance(raw_consensus, str):
+            raw_consensus = [raw_consensus]
+        consensus_block = "\n- ".join([str(c) for c in raw_consensus if c]) if raw_consensus else "None identified."
+
         contradictions_block = ""
         if analysis_result.contradictions_and_divergences:
             for item in analysis_result.contradictions_and_divergences:
@@ -151,9 +164,17 @@ class ResearchReportGenerator:
         else:
             contradictions_block = "- No significant factual contradictions detected across the analyzed sources.\n"
 
-        gaps_block = "\n- ".join(analysis_result.evidence_gaps_and_limitations) if analysis_result.evidence_gaps_and_limitations else "None specified."
+        raw_gaps = analysis_result.evidence_gaps_and_limitations or []
+        if isinstance(raw_gaps, str):
+            raw_gaps = [raw_gaps]
+        gaps_block = "\n- ".join([str(g) for g in raw_gaps if g]) if raw_gaps else "None specified."
 
         is_simple = mode == "simple"
+
+        raw_dims = plan.research_dimensions or []
+        if isinstance(raw_dims, str):
+            raw_dims = [raw_dims]
+        dims_str = ", ".join([str(d) for d in raw_dims if d]) if raw_dims else "Core Concepts"
 
         system_instruction = f"""You are ResearchAI, an elite research engine and intelligent academic tutor.
 {lang_instruction}
@@ -173,7 +194,7 @@ RESEARCH QUESTION:
 "{question}"
 
 RESEARCH INTENT: {plan.intent_summary}
-TARGET DIMENSIONS: {', '.join(plan.research_dimensions)}
+TARGET DIMENSIONS: {dims_str}
 MODE: {'Explain Simply (Beginner-Friendly & Intuitive)' if is_simple else 'Deep Research (Comprehensive & Rigorous)'}
 
 VERIFIED EVIDENCE & SOURCES:
