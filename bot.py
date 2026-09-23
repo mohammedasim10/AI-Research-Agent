@@ -909,6 +909,29 @@ async def voice_message_handler(update: Update, context: ContextTypes.DEFAULT_TY
 
         await safe_send(context, chat_id, f"🗣️ **Transcribed ({detected_lang.upper()}):**\n_{transcription}_")
 
+        # Log voice note in contact inbox
+        db.log_contact_message(
+            user_id=user_id,
+            username=update.effective_user.username or "",
+            name=f"{update.effective_user.first_name or ''} {update.effective_user.last_name or ''}".strip(),
+            message=f"[Voice Note] {transcription}",
+        )
+
+        # Alert Admin (Asim)
+        if user_id not in default_config.admin_user_ids and default_config.admin_user_ids:
+            sender_label = f"@{update.effective_user.username}" if update.effective_user.username else f"{update.effective_user.first_name or 'User'}"
+            alert_text = (
+                f"🎙️ **New Voice Note in Your Absence**\n"
+                f"👤 **From:** {sender_label} (`{user_id}`)\n"
+                f"🗣️ **Transcribed:** _{truncate_text(transcription, 300)}_\n\n"
+                f"🤖 _Your AI Assistant answered in their language and noted the message._"
+            )
+            for admin_id in default_config.admin_user_ids:
+                try:
+                    await context.bot.send_message(chat_id=admin_id, text=alert_text, parse_mode=constants.ParseMode.MARKDOWN)
+                except Exception as notify_err:
+                    logger.debug(f"Admin notification failed for {admin_id}: {notify_err}")
+
         # Process transcribed query as a research or chat request
         keyboard = [
             [
@@ -967,6 +990,21 @@ async def text_message_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         name=f"{user.first_name or ''} {user.last_name or ''}".strip(),
         message=text,
     )
+
+    # Instant alert to Asim (Admin) when someone texts the bot
+    if user_id not in default_config.admin_user_ids and default_config.admin_user_ids:
+        sender_label = f"@{user.username}" if user.username else f"{user.first_name or 'User'}"
+        alert_text = (
+            f"🔔 **New Message in Your Absence**\n"
+            f"👤 **From:** {sender_label} (`{user_id}`)\n"
+            f"💬 **Message:** _{truncate_text(text, 300)}_\n\n"
+            f"🤖 _Your AI Assistant responded in their language and noted the message._"
+        )
+        for admin_id in default_config.admin_user_ids:
+            try:
+                await context.bot.send_message(chat_id=admin_id, text=alert_text, parse_mode=constants.ParseMode.MARKDOWN)
+            except Exception as notify_err:
+                logger.debug(f"Admin notification failed for {admin_id}: {notify_err}")
 
     if context.user_data is not None:
         context.user_data["pending_topic"] = text
