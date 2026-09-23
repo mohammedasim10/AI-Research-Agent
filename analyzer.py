@@ -39,38 +39,45 @@ class ResearchAnalyzer:
         self.model_name = model_name
 
     def _call_gemini_json(self, prompt: str, system_instruction: str) -> str:
-        """Helper to invoke Gemini API and return json text."""
-        try:
-            from google import genai
-            client = genai.Client(api_key=self.api_key)
-            response = client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config={
-                    "system_instruction": system_instruction,
-                    "response_mime_type": "application/json",
-                    "temperature": 0.2,
-                },
-            )
-            if response and response.text:
-                return response.text
-        except Exception as e_new:
-            logger.debug(f"google-genai in analyzer: {e_new}. Trying fallback.")
+        """Helper to invoke Gemini API and return json text with multi-model fallback."""
+        candidate_models = [self.model_name, "gemini-flash-latest", "gemma-4-26b-a4b-it", "gemma-4-31b-it", "gemini-2.5-flash"]
+        seen_models = []
 
-        try:
-            import google.generativeai as genai_classic
-            genai_classic.configure(api_key=self.api_key)
-            model = genai_classic.GenerativeModel(
-                model_name=self.model_name,
-                system_instruction=system_instruction,
-                generation_config={"response_mime_type": "application/json", "temperature": 0.2},
-            )
-            response = model.generate_content(prompt)
-            if response and response.text:
-                return response.text
-        except Exception as e_classic:
-            logger.error(f"Gemini call failed in ResearchAnalyzer: {e_classic}")
-            raise RuntimeError(f"Failed to analyze sources with Gemini: {e_classic}")
+        for m in candidate_models:
+            if not m or m in seen_models:
+                continue
+            seen_models.append(m)
+
+            try:
+                from google import genai
+                client = genai.Client(api_key=self.api_key)
+                response = client.models.generate_content(
+                    model=m,
+                    contents=prompt,
+                    config={
+                        "system_instruction": system_instruction,
+                        "response_mime_type": "application/json",
+                        "temperature": 0.2,
+                    },
+                )
+                if response and response.text:
+                    return response.text
+            except Exception as e_new:
+                logger.debug(f"google-genai model {m} in analyzer: {e_new}")
+
+            try:
+                import google.generativeai as genai_classic
+                genai_classic.configure(api_key=self.api_key)
+                model = genai_classic.GenerativeModel(
+                    model_name=m,
+                    system_instruction=system_instruction,
+                    generation_config={"response_mime_type": "application/json", "temperature": 0.2},
+                )
+                response = model.generate_content(prompt)
+                if response and response.text:
+                    return response.text
+            except Exception as e_classic:
+                logger.debug(f"google.generativeai model {m} in analyzer: {e_classic}")
 
         return "{}"
 

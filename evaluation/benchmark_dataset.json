@@ -1,0 +1,242 @@
+[
+  {
+    "id": "eval-001",
+    "domain": "Healthcare & Medicine",
+    "question": "What is the biochemical mechanism of GLP-1 receptor agonists in metabolic regulation and cardiovascular outcomes?",
+    "expected_source_types": ["Scientific Journal / Peer-Reviewed", "Academic / University", "Government / Public Health Org"],
+    "required_topics": ["incretin", "insulin secretion", "glucagon", "gastric emptying", "cardioprotective"],
+    "language": "en"
+  },
+  {
+    "id": "eval-002",
+    "domain": "Healthcare & Medicine",
+    "question": "How does CRISPR-Cas9 base editing differ from prime editing in clinical applications for sickle cell disease?",
+    "expected_source_types": ["Scientific Journal / Peer-Reviewed", "Academic / University"],
+    "required_topics": ["Cas9", "double strand break", "prime editor", "reverse transcriptase", "hemoglobin"],
+    "language": "en"
+  },
+  {
+    "id": "eval-003",
+    "domain": "Healthcare & Medicine",
+    "question": "What is the current scientific consensus and ongoing controversy regarding the amyloid cascade hypothesis in Alzheimer's disease therapeutics?",
+    "expected_source_types": ["Scientific Journal / Peer-Reviewed", "Government / Public Health Org"],
+    "required_topics": ["amyloid beta", "tau protein", "monoclonal antibodies", "lecanemab", "cognitive decline"],
+    "language": "en"
+  },
+  {
+    "id": "eval-004",
+    "domain": "Healthcare & Medicine",
+    "question": "What are the molecular mechanisms driving antimicrobial resistance to carbapenems in Gram-negative bacteria?",
+    "expected_source_types": ["Government / Public Health Org", "Scientific Journal / Peer-Reviewed"],
+    "required_topics": ["carbapenemase", "beta-lactamase", "NDM-1", "efflux pumps", "porin mutations"],
+    "language": "en"
+  },
+  {
+    "id": "eval-005",
+    "domain": "Healthcare & Medicine",
+    "question": "What are the long-term immunological durability findings for mRNA-based bivalent vaccines compared to protein subunit boosters?",
+    "expected_source_types": ["Government / Public Health Org", "Scientific Journal / Peer-Reviewed"],
+    "required_topics": ["neutralizing antibodies", "memory B cells", "T-cell response", "waning immunity"],
+    "language": "en"
+  },
+  {
+    "id": "eval-006",
+    "domain": "Artificial Intelligence & Computing",
+    "question": "How does Sparse Mixture-of-Experts (MoE) routing work and what are the primary techniques for load balancing across expert networks?",
+    "expected_source_types": ["Academic / University", "Official Tech Documentation", "Industry Research / Tech Company"],
+    "required_topics": ["router", "top-k gating", "auxiliary loss", "expert capacity", "throughput"],
+    "language": "en"
+  },
+  {
+    "id": "eval-007",
+    "domain": "Artificial Intelligence & Computing",
+    "question": "What are the hardware and IO-awareness principles behind FlashAttention-2 and FlashAttention-3 compared to standard softmax attention?",
+    "expected_source_types": ["Academic / University", "Official Tech Documentation", "Industry Research / Tech Company"],
+    "required_topics": ["SRAM", "HBM memory bandwidth", "tiling", "online softmax", "warp specialization"],
+    "language": "en"
+  },
+  {
+    "id": "eval-008",
+    "domain": "Artificial Intelligence & Computing",
+    "question": "How does Direct Preference Optimization (DPO) eliminate the explicit reward model required in PPO-based RLHF?",
+    "expected_source_types": ["Academic / University", "Industry Research / Tech Company"],
+    "required_topics": ["implicit reward", "Bradley-Terry model", "KL divergence", "policy optimization"],
+    "language": "en"
+  },
+  {
+    "id": "eval-009",
+    "domain": "Artificial Intelligence & Computing",
+    "question": "What are the architectural trade-offs between Hierarchical Navigable Small World (HNSW) and Inverted File with Flat Quantization (IVF-PQ) in vector indexing?",
+    "expected_source_types": ["Official Tech Documentation", "Academic / University"],
+    "required_topics": ["recall", "QPS latency", "memory consumption", "quantization", "graph traversal"],
+    "language": "en"
+  },
+  {
+    "id": "eval-010",
+    "domain": "Artificial Intelligence & Computing",
+    "question": "How does speculative decoding achieve inference speedups in large language models without altering output probability distributions?",
+    "expected_source_types": ["Academic / University", "Industry Research / Tech Company"],
+    "required_topics": ["draft model", "target model", "verification step", "acceptance rate", "latency"],
+    "language": "en"
+  },
+  {
+    "id": "eval-011",
+    "domain": "Physical Sciences & Energy",
+    "question": "What are the critical solid-electrolyte interphase (SEI) mechanisms causing lithium dendrite formation in solid-state batteries?",
+    "expected_source_types": ["Scientific Journal / Peer-Reviewed", "Academic / University"],
+    "required_topics": ["lithium metal", "solid electrolyte", "stack pressure", "ionic conductivity", "short circuit"],
+    "language": "en"
+  },
+  {
+    "id": "eval-012",
+    "domain": "Physical Sciences & Energy",
+    "question": "Compare magnetic confinement fusion in modern Tokamaks versus advanced Stellarators with planar versus 3D non-planar superconducting coils.",
+    "expected_source_types": ["Scientific Journal / Peer-Reviewed", "Academic / University"],
+    "required_topics": ["plasma stability", "tokamak", "stellarator", "rotational transform", "disruptions"],
+    "language": "en"
+  },
+  {
+    "id": "eval-013",
+    "domain": "Physical Sciences & Energy",
+    "question": "What are the primary chemical degradation pathways in perovskite tandem solar cells under moisture and thermal stress?",
+    "expected_source_types": ["Scientific Journal / Peer-Reviewed", "Academic / University"],
+    "required_topics": ["halide segregation", "encapsulation", "photostability", "bandgap", "efficiency"],
+    "language": "en"
+  },
+  {
+    "id": "eval-014",
+    "domain": "Physical Sciences & Energy",
+    "question": "How do surface codes in quantum error correction implement topological protection of logical qubits against bit-flip and phase-flip noise?",
+    "expected_source_types": ["Scientific Journal / Peer-Reviewed", "Academic / University"],
+    "required_topics": ["syndrome measurement", "stabilizer code", "threshold theorem", "logical error rate"],
+    "language": "en"
+  },
+  {
+    "id": "eval-015",
+    "domain": "Physical Sciences & Energy",
+    "question": "What were the independent experimental findings and physical explanations behind the replication failures of LK-99 room-temperature superconductivity claims?",
+    "expected_source_types": ["Scientific Journal / Peer-Reviewed", "News & Analysis"],
+    "required_topics": ["cuprous sulfide", "ferromagnetism", "resistivity drop", "diamagnetism", "replication"],
+    "language": "en"
+  },
+  {
+    "id": "eval-016",
+    "domain": "Economics, Finance & Policy",
+    "question": "What are the key structural changes in the Basel III Endgame proposals regarding operational risk and fundamental review of the trading book (FRTB)?",
+    "expected_source_types": ["Financial / Regulatory", "Government / Public Health Org"],
+    "required_topics": ["capital adequacy", "risk-weighted assets", "FRTB", "internal models approach", "credit valuation"],
+    "language": "en"
+  },
+  {
+    "id": "eval-017",
+    "domain": "Economics, Finance & Policy",
+    "question": "How do wholesale Central Bank Digital Currencies (wCBDC) differ from retail CBDCs in cross-border interbank settlement architectures?",
+    "expected_source_types": ["Financial / Regulatory", "Academic / University"],
+    "required_topics": ["RTGS", "liquidity", "foreign exchange", "Project mBridge", "interoperability"],
+    "language": "en"
+  },
+  {
+    "id": "eval-018",
+    "domain": "Economics, Finance & Policy",
+    "question": "What are the economic and geopolitical impacts of export controls and subsidies under the US CHIPS and Science Act on global semiconductor supply chains?",
+    "expected_source_types": ["Government / Public Health Org", "News & Analysis"],
+    "required_topics": ["foundry capacity", "advanced packaging", "EUV lithography", "Taiwan", "supply chain"],
+    "language": "en"
+  },
+  {
+    "id": "eval-019",
+    "domain": "Economics, Finance & Policy",
+    "question": "How does the European Union AI Act categorize high-risk AI systems and what are the mandatory conformity assessment obligations for foundation models?",
+    "expected_source_types": ["Government / Public Health Org", "Official Tech Documentation"],
+    "required_topics": ["risk tiers", "GPAI", "systemic risk", "technical documentation", "CE marking"],
+    "language": "en"
+  },
+  {
+    "id": "eval-020",
+    "domain": "Economics, Finance & Policy",
+    "question": "What are the comparative economic efficiencies of carbon border adjustment mechanisms (CBAM) versus domestic emissions trading systems (ETS)?",
+    "expected_source_types": ["Government / Public Health Org", "Academic / University"],
+    "required_topics": ["carbon leakage", "allowances", "WTO compliance", "decarbonization", "scope 1 2 3"],
+    "language": "en"
+  },
+  {
+    "id": "eval-021",
+    "domain": "Global Health & Environment",
+    "question": "What are the treaty provisions and sticking points in the World Health Organization (WHO) Pandemic Agreement negotiations regarding pathogen access and benefit sharing (PABS)?",
+    "expected_source_types": ["Government / Public Health Org", "News & Analysis"],
+    "required_topics": ["PABS", "genomic sequencing data", "intellectual property", "vaccine distribution", "WHO"],
+    "language": "en"
+  },
+  {
+    "id": "eval-022",
+    "domain": "Global Health & Environment",
+    "question": "What are the environmental life-cycle emissions and land-use intensity metrics of green hydrogen via water electrolysis compared to blue hydrogen with carbon capture?",
+    "expected_source_types": ["Scientific Journal / Peer-Reviewed", "Government / Public Health Org"],
+    "required_topics": ["PEM electrolyzer", "SMR with CCS", "methane leakage", "LCOH", "efficiency"],
+    "language": "en"
+  },
+  {
+    "id": "eval-023",
+    "domain": "Multilingual & Cross-Lingual Research",
+    "question": "क्वांटम कंप्यूटिंग में क्यूबिट (Qubit) और सुपरपोजिशन (Superposition) का क्या सिद्धांत है?",
+    "expected_source_types": ["Academic / University", "Scientific Journal / Peer-Reviewed"],
+    "required_topics": ["qubit", "superposition", "quantum", "entanglement"],
+    "language": "hi"
+  },
+  {
+    "id": "eval-024",
+    "domain": "Multilingual & Cross-Lingual Research",
+    "question": "कृत्रिम बुद्धिमत्ता (Artificial Intelligence) में डीप लर्निंग और न्यूरल नेटवर्क कैसे काम करते हैं?",
+    "expected_source_types": ["Academic / University", "Official Tech Documentation"],
+    "required_topics": ["neural network", "weights", "backpropagation", "layers"],
+    "language": "hi"
+  },
+  {
+    "id": "eval-025",
+    "domain": "Multilingual & Cross-Lingual Research",
+    "question": "ఆర్టిఫిషియల్ ఇంటెలిజెన్స్ లో మెషిన్ లెర్నింగ్ మోడల్స్ శిక్షణ ఎలా పొందుతాయి?",
+    "expected_source_types": ["Academic / University", "Official Tech Documentation"],
+    "required_topics": ["training", "dataset", "algorithms", "optimization"],
+    "language": "te"
+  },
+  {
+    "id": "eval-026",
+    "domain": "Multilingual & Cross-Lingual Research",
+    "question": "సౌర శక్తి (Solar Energy) మరియు ఫోటోవోల్టాయిక్ కణాల పనితీరు సూత్రాలు ఏమిటి?",
+    "expected_source_types": ["Scientific Journal / Peer-Reviewed", "Academic / University"],
+    "required_topics": ["photovoltaic", "semiconductor", "solar cell", "efficiency"],
+    "language": "te"
+  },
+  {
+    "id": "eval-027",
+    "domain": "Multilingual & Cross-Lingual Research",
+    "question": "ما هي المبادئ الأساسية لشبكات التعلم العميق ونماذج المحولات (Transformers) في معالجة اللغات الطبيعية؟",
+    "expected_source_types": ["Academic / University", "Official Tech Documentation"],
+    "required_topics": ["transformer", "attention mechanism", "NLP", "embeddings"],
+    "language": "ar"
+  },
+  {
+    "id": "eval-028",
+    "domain": "Multilingual & Cross-Lingual Research",
+    "question": "كيف تساهم تقنية تحرير الجينات كريسبر (CRISPR) في علاج الأمراض الوراثية وتطوير المحاصيل الزراعية؟",
+    "expected_source_types": ["Scientific Journal / Peer-Reviewed", "Academic / University"],
+    "required_topics": ["CRISPR", "Cas9", "DNA", "genetics"],
+    "language": "ar"
+  },
+  {
+    "id": "eval-029",
+    "domain": "Data Systems & Distributed Computing",
+    "question": "How does Raft consensus algorithm guarantee leader election safety and log matching in distributed state machines?",
+    "expected_source_types": ["Academic / University", "Official Tech Documentation"],
+    "required_topics": ["term", "heartbeat", "log replication", "quorum", "commitIndex"],
+    "language": "en"
+  },
+  {
+    "id": "eval-030",
+    "domain": "Data Systems & Distributed Computing",
+    "question": "What are the synchronization and cache coherency mechanisms in modern Non-Uniform Memory Access (NUMA) multi-socket server architectures?",
+    "expected_source_types": ["Academic / University", "Official Tech Documentation"],
+    "required_topics": ["MESI protocol", "directory-based", "interconnect", "UPI", "latency"],
+    "language": "en"
+  }
+]

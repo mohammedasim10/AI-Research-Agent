@@ -1,7 +1,7 @@
 """
 agent.py - ResearchAI Autonomous Orchestrator Agent.
 Coordinates the end-to-end research lifecycle:
-Plan -> Search -> Collect -> Analyze -> Cross-Check -> Synthesize -> Report
+Plan -> Search -> Collect -> Rank/RAG -> Analyze -> Cross-Check -> Synthesize -> Verify Citations -> Report
 Provides real-time event streaming callbacks, multilingual adaptation, and pedagogical teaching.
 """
 
@@ -11,11 +11,15 @@ import time
 from typing import Any, Callable, Dict, List, Optional
 
 from analyzer import ResearchAnalyzer, SourceAnalysisResult
+from citation_verifier import CitationVerifier, CitationVerificationResult
 from config import AppConfig, config as default_config
+from observability import metrics_registry, trace_operation, create_request_context
 from planner import ResearchPlan, ResearchPlanner
+from rag_engine import RAGEngine, RAGContext
 from report_generator import GeneratedReport, ResearchReportGenerator, SUPPORTED_LANGUAGES
 from search import SearchClient, SearchResult
 from source_processor import ProcessedSource, SourceProcessor
+from tools import ToolRegistry, get_default_registry
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +36,8 @@ class ResearchSessionResult:
     teaching_markdown: str = ""
     language: str = "en"
     mode: str = "deep"  # "simple" or "deep"
+    citation_verification: Optional[Dict[str, Any]] = None
+    rag_metadata: Optional[Dict[str, Any]] = None
     metrics: Dict[str, Any] = field(default_factory=dict)
     error_message: Optional[str] = None
     language_cache: Dict[str, Dict[str, str]] = field(default_factory=dict)
@@ -43,7 +49,8 @@ class ResearchSessionResult:
 class ResearchAgent:
     """
     Autonomous multi-stage AI Research Agent powered by Google Gemini and live web retrieval.
-    Includes pedagogical tutoring and multilingual adaptation across English, Hindi, Telugu, and Arabic.
+    Includes pedagogical tutoring, RAG context ranking, deterministic citation verification,
+    and multilingual adaptation across English, Hindi, Telugu, and Arabic.
     """
 
     def __init__(
@@ -67,6 +74,11 @@ class ResearchAgent:
         )
         self.analyzer = ResearchAnalyzer(api_key=self.api_key, model_name=self.model_name)
         self.report_generator = ResearchReportGenerator(api_key=self.api_key, model_name=self.model_name)
+        
+        # New Engineering Subsystems
+        self.rag_engine = RAGEngine(max_context_chars=24000)
+        self.citation_verifier = CitationVerifier()
+        self.tool_registry = get_default_registry()
 
     def run(
         self,
@@ -74,6 +86,7 @@ class ResearchAgent:
         language: str = "en",
         mode: str = "deep",
         on_progress: Optional[Callable[[str, str, str, Optional[Dict[str, Any]]], None]] = None,
+        user_id: Any = None,
     ) -> ResearchSessionResult:
         """
         Executes the full autonomous research pipeline with real-time progress callbacks.
@@ -81,6 +94,7 @@ class ResearchAgent:
         start_time = time.time()
         clean_question = question.strip()
         lang_code = language if language in SUPPORTED_LANGUAGES else "en"
+        req_ctx = create_request_context(action="research_session", user_id=user_id, question=clean_question)
 
         def notify(stage: str, status: str, message: str, data: Optional[Dict[str, Any]] = None):
             if on_progress:
@@ -101,7 +115,7 @@ class ResearchAgent:
                 teaching_markdown="",
                 language=lang_code,
                 mode=mode,
-                metrics={"duration_seconds": 0},
+                metrics={"duration_seconds": 0, "request_id": req_ctx.request_id},
                 error_message="Please enter a non-empty research question.",
             )
 
@@ -132,6 +146,13 @@ class ResearchAgent:
 
             if not search_hits:
                 notify("search", "warning", "No live web results returned for these queries.")
+                dur = round(time.time() - start_time, 2)
+                metrics_registry.record_request(
+                    action="research_session",
+                    success=False,
+                    duration_seconds=dur,
+                    model_name=self.model_name,
+                )
                 return ResearchSessionResult(
                     question=clean_question,
                     success=False,
@@ -142,7 +163,7 @@ class ResearchAgent:
                     teaching_markdown="",
                     language=lang_code,
                     mode=mode,
-                    metrics={"duration_seconds": round(time.time() - start_time, 2)},
+                    metrics={"duration_seconds": dur, "request_id": req_ctx.request_id},
                     error_message="Web search returned 0 results. Please try rephrasing your research question.",
                 )
 
@@ -154,7 +175,7 @@ class ResearchAgent:
             )
 
             # -------------------------------------------------------------
-            # STAGE 3: CONTENT EXTRACTION & NORMALIZATION
+            # STAGE 3: CONTENT EXTRACTION & NORMALIZATION (SSRF PROTECTED)
             # -------------------------------------------------------------
             notify("collect", "running", f"Extracting readable text & evidence from {len(search_hits)} sources...")
             processed_sources = self.source_processor.process_sources_concurrently(
@@ -170,7 +191,23 @@ class ResearchAgent:
             )
 
             # -------------------------------------------------------------
-            # STAGE 4: CROSS-SOURCE ANALYSIS & CONTRADICTION DETECTION
+            # STAGE 4: RAG CONTEXT RANKING & DOMAIN SCORING
+            # -------------------------------------------------------------
+            notify("rag", "running", "Ranking sources by domain authority and building token-budgeted RAG context...")
+            rag_context: RAGContext = self.rag_engine.construct_rag_context(
+                question=clean_question,
+                sources=[s.to_dict() for s in processed_sources],
+                search_queries=plan.search_queries,
+            )
+            notify(
+                "rag",
+                "completed",
+                f"Ranked {len(rag_context.ranked_sources)} sources. Covered {len(rag_context.domains_covered)} authoritative domains.",
+                {"est_tokens": rag_context.total_tokens_estimated},
+            )
+
+            # -------------------------------------------------------------
+            # STAGE 5: CROSS-SOURCE ANALYSIS & CONTRADICTION DETECTION
             # -------------------------------------------------------------
             notify("analyze", "running", "Cross-checking claims, detecting contradictions, and validating evidence...")
             analysis_result = self.analyzer.analyze_and_cross_check(
@@ -186,7 +223,7 @@ class ResearchAgent:
             )
 
             # -------------------------------------------------------------
-            # STAGE 5: REPORT SYNTHESIS WITH CITATION GROUNDING & TEACHING
+            # STAGE 6: REPORT SYNTHESIS WITH CITATION GROUNDING & TEACHING
             # -------------------------------------------------------------
             lang_label = SUPPORTED_LANGUAGES[lang_code]["native"]
             notify("report", "running", f"Synthesizing research report & teaching guide in {lang_label}...")
@@ -197,34 +234,64 @@ class ResearchAgent:
                 language=lang_code,
                 mode=mode,
             )
+
+            # -------------------------------------------------------------
+            # STAGE 7: POST-GENERATION DETERMINISTIC CITATION VERIFICATION
+            # -------------------------------------------------------------
+            notify("verify", "running", "Executing deterministic citation verification and scrubbing hallucinated references...")
+            verification: CitationVerificationResult = self.citation_verifier.verify_citations(
+                markdown_text=report_data.markdown_content,
+                sources=analysis_result.enriched_sources,
+            )
+            final_report_markdown = verification.verified_markdown or report_data.markdown_content
             notify(
-                "report",
+                "verify",
                 "completed",
-                f"Research report and tutor guide finalized with {report_data.citation_count} grounded citations.",
-                {"citation_count": report_data.citation_count},
+                f"Citation verification passed. Grounding rate: {verification.grounding_rate*100:.1f}%, {verification.valid_citations_count} valid citations.",
+                {"grounding_rate": verification.grounding_rate},
             )
 
             duration = round(time.time() - start_time, 2)
-            total_words = sum(s["word_count"] for s in analysis_result.enriched_sources)
+            total_words = sum(s.get("word_count", 0) for s in analysis_result.enriched_sources)
 
             metrics = {
                 "duration_seconds": duration,
+                "request_id": req_ctx.request_id,
                 "queries_executed": len(plan.search_queries),
                 "sources_retrieved": len(processed_sources),
                 "full_text_extracts": successful_fetches,
                 "total_words_analyzed": total_words,
-                "citations_referenced": report_data.citation_count,
+                "citations_referenced": verification.valid_citations_count,
+                "grounding_rate_percent": round(verification.grounding_rate * 100, 2),
+                "domains_covered_count": len(rag_context.domains_covered),
                 "model_used": self.model_name,
                 "language": lang_code,
                 "mode": mode,
             }
 
+            # Record operational observability metrics
+            metrics_registry.record_request(
+                action="research_session",
+                success=True,
+                duration_seconds=duration,
+                model_name=self.model_name,
+                sources_count=len(processed_sources),
+                citations_count=verification.total_citations_found,
+                grounded_count=verification.valid_citations_count,
+            )
+
             # Cache current language
             lang_cache = {
                 lang_code: {
-                    "report_markdown": report_data.markdown_content,
+                    "report_markdown": final_report_markdown,
                     "teaching_markdown": report_data.teaching_content,
                 }
+            }
+
+            rag_meta = {
+                "domains_covered": rag_context.domains_covered,
+                "source_types": rag_context.source_types_represented,
+                "est_context_tokens": rag_context.total_tokens_estimated,
             }
 
             return ResearchSessionResult(
@@ -233,10 +300,12 @@ class ResearchAgent:
                 plan=plan.to_dict(),
                 sources=analysis_result.enriched_sources,
                 analysis=analysis_result.to_dict(),
-                report_markdown=report_data.markdown_content,
+                report_markdown=final_report_markdown,
                 teaching_markdown=report_data.teaching_content,
                 language=lang_code,
                 mode=mode,
+                citation_verification=verification.to_dict(),
+                rag_metadata=rag_meta,
                 metrics=metrics,
                 language_cache=lang_cache,
             )
@@ -244,6 +313,12 @@ class ResearchAgent:
         except Exception as exc:
             logger.exception("Unexpected error during research execution:")
             duration = round(time.time() - start_time, 2)
+            metrics_registry.record_request(
+                action="research_session",
+                success=False,
+                duration_seconds=duration,
+                model_name=self.model_name,
+            )
             notify("error", "failed", f"Execution error: {str(exc)}")
             return ResearchSessionResult(
                 question=clean_question,
@@ -255,7 +330,7 @@ class ResearchAgent:
                 teaching_markdown="",
                 language=lang_code,
                 mode=mode,
-                metrics={"duration_seconds": duration},
+                metrics={"duration_seconds": duration, "request_id": req_ctx.request_id},
                 error_message=f"Research agent encountered an error: {str(exc)}",
             )
 
@@ -317,6 +392,7 @@ class ResearchAgent:
         language: str = "en",
         mode: str = "deep",
         on_progress: Optional[Callable[[str, str, str, Optional[Dict[str, Any]]], None]] = None,
+        user_id: Any = None,
     ) -> ResearchSessionResult:
         """
         Processes a contextual follow-up question, preserving the original research foundation
@@ -326,12 +402,11 @@ class ResearchAgent:
         if not clean_followup:
             return original_session
 
-        # Formulate contextual investigation target
         contextual_target = f"{original_session.question} (Follow-up: {clean_followup})"
         return self.run(
             question=contextual_target,
             language=language,
             mode=mode,
             on_progress=on_progress,
+            user_id=user_id,
         )
-

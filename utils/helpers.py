@@ -366,3 +366,25 @@ def build_json_export(
         "sources": sources,
     }
     return json.dumps(payload, indent=2, ensure_ascii=False)
+
+
+def format_rtl_if_arabic(text: str, language: str = "en") -> str:
+    """
+    Prepends the Unicode Right-to-Left Mark (RLM: \\u200F) to each line if the language is Arabic.
+    This guarantees proper RTL rendering across Telegram clients and Markdown renderers
+    without disturbing embedded Latin characters, numbers, and URLs.
+    """
+    if not text or language != "ar":
+        return text
+
+    rlm = "\u200F"
+    lines = text.splitlines()
+    rtl_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("```"):
+            rtl_lines.append(f"{rlm}{line}")
+        else:
+            rtl_lines.append(line)
+    return "\n".join(rtl_lines)
+

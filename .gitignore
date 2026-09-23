@@ -3,6 +3,8 @@
 *.env
 .env.local
 .env.*.local
+data/
+*.log
 
 # Python cache & build artifacts
 __pycache__/

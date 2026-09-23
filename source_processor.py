@@ -147,6 +147,25 @@ class SourceProcessor:
                 retrieved_date=today_date,
             )
 
+        # SSRF Validation Check
+        from utils.security import validate_url_for_ssrf
+        is_safe, reason = validate_url_for_ssrf(url, resolve_dns=True)
+        if not is_safe:
+            logger.warning(f"SSRF defense blocked URL: {url} ({reason})")
+            return ProcessedSource(
+                id=source_id,
+                title=title,
+                url=url,
+                domain=domain,
+                source_type=source_type,
+                snippet=snippet,
+                full_text=snippet,
+                word_count=len(snippet.split()),
+                status="blocked",
+                query_origin=query_origin,
+                retrieved_date=today_date,
+            )
+
         extracted_text = ""
         pub_date = None
         status = "failed"
