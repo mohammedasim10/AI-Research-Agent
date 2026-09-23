@@ -154,31 +154,12 @@ class TestDomainAwarePlanner(unittest.TestCase):
         self.assertEqual(planner._detect_domain_heuristics("What causes inflation in global markets?"), "Finance & Economics")
 
 
-class TestVoiceComponent(unittest.TestCase):
-    def test_voice_component_languages(self):
-        from utils.voice_component import get_voice_controller_html
-        
-        # English
-        html_en = get_voice_controller_html("en", "Test English Speech")
-        self.assertIn("en-US", html_en)
-        self.assertIn("English", html_en)
-        self.assertIn("speechSynthesis", html_en)
-        self.assertIn("Direct Answer", html_en)
-        
-        # Hindi
-        html_hi = get_voice_controller_html("hi", "परीक्षण हिन्दी पाठ")
-        self.assertIn("hi-IN", html_hi)
-        self.assertIn("हिन्दी", html_hi)
-        
-        # Telugu
-        html_te = get_voice_controller_html("te", "పరీక్ష తెలుగు వచనం")
-        self.assertIn("te-IN", html_te)
-        self.assertIn("తెలుగు", html_te)
-        
-        # Arabic
-        html_ar = get_voice_controller_html("ar", "نص اختبار باللغة العربية")
-        self.assertIn("ar-SA", html_ar)
-        self.assertIn("العربية", html_ar)
+class TestVoiceHandler(unittest.TestCase):
+    def test_voice_handler_empty_bytes_handling(self):
+        from voice_handler import transcribe_voice_message
+        text, lang = transcribe_voice_message(b"", mime_type="audio/ogg")
+        self.assertIsNone(text)
+        self.assertIsNone(lang)
 
 
 class TestAgentFollowup(unittest.TestCase):

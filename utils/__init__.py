@@ -11,8 +11,13 @@ from utils.helpers import (
     clean_text,
     extract_domain,
     truncate_text,
+    format_rtl_if_arabic,
 )
-from utils.voice_component import get_voice_controller_html
+from utils.security import (
+    validate_url_for_ssrf,
+    is_ip_blocked,
+    mask_user_id,
+)
 
 __all__ = [
     "build_html_printable_export",
@@ -24,5 +29,8 @@ __all__ = [
     "clean_text",
     "extract_domain",
     "truncate_text",
-    "get_voice_controller_html",
+    "format_rtl_if_arabic",
+    "validate_url_for_ssrf",
+    "is_ip_blocked",
+    "mask_user_id",
 ]
