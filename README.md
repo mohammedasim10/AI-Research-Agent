@@ -93,7 +93,7 @@ AI-Research-Agent/
 
 ### 2. Clone the Repository
 ```bash
-git clone https://github.com/your-username/AI-Research-Agent.git
+git clone https://github.com/mohammedasim10/AI-Research-Agent.git
 cd AI-Research-Agent
 ```
 
