@@ -1,4 +1,12 @@
-# ResearchAI — Autonomous AI Research Agent
+# 🔬 ResearchAI — Autonomous AI Research Agent
+
+> An AI-powered multilingual research agent that plans research, searches the web, analyzes evidence, cross-checks sources, and generates structured research reports.
+
+### 🌐 Live Demo
+
+👉 **[Try ResearchAI Live](https://ai-research-agent-e3zgg5exnswdy2mzexjj8x.streamlit.app/)**
+
+---
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.35%2B-FF4B4B.svg)](https://streamlit.io/)
