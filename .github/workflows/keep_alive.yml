@@ -1,0 +1,16 @@
+name: Keep Streamlit App Awake 24/7
+
+on:
+  schedule:
+    # Runs every 6 hours to prevent Streamlit Cloud from sleeping
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping-app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Streamlit App URL
+        run: |
+          curl -s -I "https://ai-research-agent-e3zgg5exnswdy2mzexjj8x.streamlit.app/" || true
+          echo "Streamlit app pinged successfully to maintain 24/7 availability."
