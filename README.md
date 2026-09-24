@@ -246,9 +246,41 @@ python bot.py
 
 ---
 
-## Deployment
+## 24/7 Live Automation & Deployment
 
-### Docker Deployment
+### 1. Local 24/7 Live Supervisor (`watchdog_runner.py`)
+Run the bot locally with self-healing, automatic crash recovery, and health probe monitoring:
+
+```bash
+# Start the 24/7 self-healing supervisor
+python watchdog_runner.py
+```
+- **Automatic Process Supervision**: If network drops or the process crashes, the watchdog re-initializes `bot.py` within 5 seconds.
+- **Continuous Health Probes**: Queries `http://127.0.0.1:8080/health` every 30s. If 3 consecutive probes fail, it cleans up and restarts the process.
+
+---
+
+### 2. Free 24/7 Cloud Hosting (1-Click Deployment)
+
+The repository includes pre-configured **`render.yaml`** and **`Procfile`** for instant zero-lag cloud deployment:
+
+#### Option A: Render (Free Web Service)
+1. Push this repo to GitHub.
+2. Log into [Render.com](https://render.com) and click **New +** > **Blueprint**.
+3. Select this repository (`AI-Research-Agent`).
+4. Set the environment variables:
+   - `TELEGRAM_BOT_TOKEN`
+   - `GEMINI_API_KEY`
+5. Click **Apply**. Render will automatically build the service, start the bot, and monitor `/health` 24/7.
+
+#### Option B: Railway / Koyeb / Heroku
+1. Create a new service connected to this repository.
+2. The platform automatically detects `Procfile` (`web: python bot.py`).
+3. Set your `TELEGRAM_BOT_TOKEN` and `GEMINI_API_KEY` in the environment variables tab.
+
+---
+
+### 3. Docker Deployment
 
 Build and run using the multi-stage Docker container:
 
@@ -256,7 +288,7 @@ Build and run using the multi-stage Docker container:
 # Build the Docker image
 docker build -t ai-research-agent:latest .
 
-# Run the container
+# Run the container with auto-restart
 docker run -d \
   --name ai-research-agent \
   -p 8080:8080 \
@@ -269,7 +301,9 @@ docker run -d \
 curl http://localhost:8080/health
 ```
 
-### Webhook Hosting
+---
+
+### 4. Webhook Hosting
 For cloud environments (e.g. Render, Railway, AWS ECS, GCP Cloud Run), set `WEBHOOK_URL=https://yourdomain.com` in your environment configuration. The bot will automatically register the webhook with Telegram on startup using `WEBHOOK_SECRET_TOKEN`.
 
 ---
