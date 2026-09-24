@@ -18,6 +18,7 @@ from utils.security import (
     is_ip_blocked,
     mask_user_id,
 )
+from utils.voice_component import get_voice_controller_html
 
 __all__ = [
     "build_html_printable_export",
@@ -33,4 +34,6 @@ __all__ = [
     "validate_url_for_ssrf",
     "is_ip_blocked",
     "mask_user_id",
+    "get_voice_controller_html",
 ]
+
