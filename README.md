@@ -1,11 +1,14 @@
-# AI Research Agent — Telegram AI Assistant
+# AI Research Agent — Autonomous Research Assistant
 
+[![Live Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://ai-research-agent-e3zgg5exnswdy2mzexjj8x.streamlit.app/)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/downloads/)
 [![Docker](https://img.shields.io/badge/Docker-Multi--Stage%20Container-2496ED.svg)](Dockerfile)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF.svg)](.github/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-An AI-powered multilingual research assistant and Telegram bot engineered for structured information retrieval, source evaluation, evidence cross-checking, and citation verification.
+> 🌐 **Live Web Application (Free Cloud Demo):** [https://ai-research-agent-e3zgg5exnswdy2mzexjj8x.streamlit.app/](https://ai-research-agent-e3zgg5exnswdy2mzexjj8x.streamlit.app/)
+> 
+> An AI-powered research assistant engineered for structured multi-source information retrieval, domain authority ranking, evidence cross-checking, speech narration, and deterministic citation verification.
 
 ---
 
@@ -221,11 +224,19 @@ RATE_LIMIT_PER_MINUTE=15
 ADMIN_USER_IDS=your_telegram_user_id
 ```
 
-### 4. Running the Bot
+### 4. Running the Application
+
+**Option A: Launch Web Dashboard (Streamlit UI)**
 ```bash
-# Run the Telegram bot service (starts polling and /health server on port 8080)
+streamlit run app.py
+```
+*Accessible in your browser at `http://localhost:8501`*
+
+**Option B: Launch Telegram Bot Service**
+```bash
 python bot.py
 ```
+*Starts polling and `/health` server on port 8080*
 
 ---
 
